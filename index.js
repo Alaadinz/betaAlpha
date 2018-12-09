@@ -140,44 +140,55 @@ var getResults = function (sondageId) {
 //
 // Doit retourner false si les informations ne sont pas valides, ou
 // true si le sondage a été créé correctement.
-var lettrePermise = function (car) {
-    return (car >= "a" && car <= "z") ||
-           (car >= "A" && car <= "Z") ||
-           (car == ("-"));
-};
 
-var comparer = function (x,y) {
+var comparer = function (x, y) {
     var tableauDebut  = x.split("-");
     var tableauFin    = y.split("-");
 
-    if ((tableauDebut[0]>= tableauFin[0] ) &&
-        (tableauDebut[1]  >= tableauFin[1] ) &&
-       	(tableauDebut[2] >= tableauFin[2]
-        )){
+    if ((tableauDebut[0] >= tableauFin[0])
+        && (tableauDebut[1] >= tableauFin[1])
+        && (tableauDebut[2] >= tableauFin[2])) {
           return true;
     } else {
         return false;
     }
 };
 
-var creerSondage = function(titre, id, dateDebut, dateFin, heureDebut, heureFin) {
+var joursDiff = function (x, y) {
+    var debut = new Date(x.split("-"));
+    var fin   = new Date(y.split("-"));
+    var tempsDiff = fin.getTime() - debut.getTime(); // retour en millisecondes
+    var joursDiff = tempsDiff / (3600 * 24 * 1000);  // division pour remettre en jours
+    return joursDiff;
+};
 
-var heureDebutConverti = +heureDebut.slice(0,heureDebut.length-1);
-var heureFinConverti = +heureFin.slice(0,heureFin.length-1);
-
-for(var i=0;i<id.length;i++){
-        if(!lettrePermise(id.charAt(i))){
-     	      return false;
+var carPermis = function (texte) {
+	for (var i = 0; i < texte.length; i++) {
+    	if ((texte[i] >= "a" && texte[i] <= "z")
+            || (texte[i] >= "A" && texte[i] <= "z")
+            || (parseInt(texte[i]) >= 0)
+            || texte[i] == "-") {
+            continue;
+        } else {
+            return false;
         }
     }
+    return true;
+};
 
-  if (!comparer(dateDebut, dateFin) ){
-      return false;
-  }
-  if (heureDebutConverti < heureFinConverti) {
-     return false;
-  }
-return true;
+var creerSondage = function(titre, id, dateDebut, dateFin, heureDebut, heureFin) {
+
+    var heureDebutConverti = +heureDebut.slice(0, heureDebut.length-1);
+    var heureFinConverti = +heureFin.slice(0, heureFin.length-1);
+    
+    if ((!carPermis(id))
+        || (!comparer(dateDebut, dateFin))
+        || (heureDebutConverti > heureFinConverti)
+        || (joursDiff(dateDebut, dateFin) > 30)) { // Les caracteres permis
+        return false;
+    } else {
+        return true;
+    }
 };
 
 // Ajoute un participant et ses disponibilités aux résultats d'un
