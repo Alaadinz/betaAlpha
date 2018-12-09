@@ -145,13 +145,13 @@ var comparer = function (x, y) {
     var tableauDebut  = x.split("-");
     var tableauFin    = y.split("-");
 
-    if ((tableauDebut[0] >= tableauFin[0])
-        && (tableauDebut[1] >= tableauFin[1])
-        && (tableauDebut[2] >= tableauFin[2])) {
+    if ((tableauDebut[0] <= tableauFin[0])
+        && (tableauDebut[1] <= tableauFin[1])
+        && (tableauDebut[2] <= tableauFin[2])) {
           return true;
     } else {
-        return false;
-    }
+		return false;
+	}
 };
 
 var joursDiff = function (x, y) {
@@ -183,8 +183,8 @@ var creerSondage = function(titre, id, dateDebut, dateFin, heureDebut, heureFin)
     
     if ((!carPermis(id))
         || (!comparer(dateDebut, dateFin))
-        || (heureDebutConverti > heureFinConverti)
-        || (joursDiff(dateDebut, dateFin) > 30)) { // Les caracteres permis
+        || (!(heureDebutConverti <= heureFinConverti))
+        || (!(joursDiff(dateDebut, dateFin) <= 30))) { // Les caracteres permis
         return false;
     } else {
         return true;
