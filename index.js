@@ -118,13 +118,56 @@ var MILLIS_PAR_JOUR = (24 * 60 * 60 * 1000);
 // sondage demandé.
 //
 // Doit retourner false si le calendrier demandé n'existe pas
+
+//Tableaux crée de n elements. Ses éléments sont ensuite remplis de 0 pour
+//ne pas être undefined. Ce tableau utilise les fonction map et des itterations
+//de i pour les "tr" et j pour les "td" pour y inserer des valeurs.
+
+var atrs = function (name, content){
+   return name + "=\"" + content + "\"";
+};
+
+//Fonction pour crée les tags
+var tag = function (name, attribut, content){
+   return "<" + name + (attribut.length == 0 ? "" : " ") + attribut + ">"
+    + content + "</"+name+">";
+};
+
+var style = function (proprietes) {
+    return "style=\"" + proprietes + "\"";
+};
+
+var genererMatrice = function (largeur, hauteur){
+    return Array(hauteur).fill(0).map(function (y, i) {
+        return Array(largeur).fill(0).map(function(x,j){
+          return atrs("id", i + "-" + j); // elem
+        });
+    });
+};
+
+var cal = document.getElementById("calendrier");
+var nbHeures = cal.dataset.nbheures;
+var nbJours = cal.dataset.nbjours;
+
+var tableAtrs = atrs("id", "calendrier")+"\n"
++atrs("onmousedown", "onClick(event)")+"\n"
++atrs("onmouseover", "onMove(event)")+"\n"
++atrs("data-nbjours", nbJours)+"\n"
++atrs("data-nbheures", nbHeures);
+
+var table = function (matrice) {
+  	return tag("table", tableAtrs, matrice.map(function(row) {
+       	return tag("tr", "", row.map(function(elem) {
+            return tag("td", elem, "" );
+        }).join(""+"\n"));
+    }).join(""+"\n"));
+};
+
+table(genererMatrice(6,11));
+
 var getCalendar = function (sondageId) {
-
-    document.getElementById(" ").innerHTML = table();
-
-
-
-     return 'Calendrier <b>' + sondageId + '</b> (TODO)';
+	document.getElementById(" ").innerHTML = table();
+	return 'Calendrier <b>' + sondageId + '</b> (TODO)';
 };
 
 // Retourne le texte HTML à afficher à l'utilisateur pour voir les
@@ -176,6 +219,8 @@ var carPermis = function (texte) {
     return true;
 };
 
+var stockSondages = [];
+
 var creerSondage = function(titre, id, dateDebut, dateFin, heureDebut, heureFin) {
 
     var heureDebutConverti = +heureDebut.slice(0, heureDebut.length-1);
@@ -187,6 +232,9 @@ var creerSondage = function(titre, id, dateDebut, dateFin, heureDebut, heureFin)
         || (!(joursDiff(dateDebut, dateFin) <= 30))) { // Les caracteres permis
         return false;
     } else {
+	stockSondages.push({titre: titre, id: id, dateDebut: dateDebut,
+                            dateFin: dateFin, heureDebut: heureDebut,
+                            heureFin: heureFin});
         return true;
     }
 };
@@ -284,46 +332,3 @@ http.createServer(function (requete, reponse) {
     sendPage(reponse, doc);
 
 }).listen(port);
-
-
-
-//Tableaux crée de n elements. Ses éléments sont ensuite remplis de 0 pour
-//ne pas être undefined. Ce tableau utilise les fonction map et des itterations
-//de i pour les "tr" et j pour les "td" pour y inserer des valeurs.
-
-var id = function (name){
-   return "id=\"" + name+ "\"";
-};
-
-//Fonction pour crée les tags
-var tag = function (name, attribut, content){
-   return "<" + name + (attribut.length == 0 ? "" : " ") + attribut + ">"
-    + content + "</"+name+">";
-};
-
-var style = function (proprietes) {
-    return "style=\"" + proprietes + "\"";
-};
-
-
-var genererMatrice = function (largeur, hauteur){
-    return Array(hauteur).fill(0).map(function (y, i) {
-        return Array(largeur).fill(0).map(function(x,j){
-          return "id="+i+"-"+j;
-        });
-    });
-};
-
-
-
-
-var table = function (matrice) {
-
-    return tag("table", "" , matrice.map(function(row) {
-        return tag("tr", "", row.map(function(elem) {
-                return tag("td", elem, "" );
-        }).join(""+"\n"));
-    }).join(""+"\n"));
-};
-
-console.log(table(genererMatrice(5,5)));
