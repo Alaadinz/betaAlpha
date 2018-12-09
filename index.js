@@ -176,6 +176,8 @@ var carPermis = function (texte) {
     return true;
 };
 
+var stockSondages = [];
+
 var creerSondage = function(titre, id, dateDebut, dateFin, heureDebut, heureFin) {
 
     var heureDebutConverti = +heureDebut.slice(0, heureDebut.length-1);
@@ -187,6 +189,9 @@ var creerSondage = function(titre, id, dateDebut, dateFin, heureDebut, heureFin)
         || (!(joursDiff(dateDebut, dateFin) <= 30))) { // Les caracteres permis
         return false;
     } else {
+	stockSondages.push({titre: titre, id: id, dateDebut: dateDebut,
+                            dateFin: dateFin, heureDebut: heureDebut,
+                            heureFin: heureFin});
         return true;
     }
 };
