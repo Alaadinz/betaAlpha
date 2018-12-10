@@ -130,7 +130,7 @@ var atrs = function (name, content){
 //Fonction pour crée les tags
 var tag = function (name, attribut, content){
    return "<" + name + (attribut.length == 0 ? "" : " ") + attribut + ">"
-    + content + "</"+name+">";
+   		  + content + "</"+name+">";
 };
 
 var style = function (proprietes) {
@@ -145,29 +145,30 @@ var genererMatrice = function (largeur, hauteur){
     });
 };
 
-var cal = document.getElementById("calendrier");
-var nbHeures = cal.dataset.nbheures;
-var nbJours = cal.dataset.nbjours;
+//var cal = document.getElementById("calendrier");  //A MODIFIER CAR PAR 6 ET 11.
+//var nbHeures = cal.dataset.nbheures;
+//var nbJours = cal.dataset.nbjours;
 
-var tableAtrs = atrs("id", "calendrier")+"\n"
-+atrs("onmousedown", "onClick(event)")+"\n"
-+atrs("onmouseover", "onMove(event)")+"\n"
-+atrs("data-nbjours", nbJours)+"\n"
-+atrs("data-nbheures", nbHeures);
+var tableAtrs = atrs("id", "calendrier")
+				+atrs("onmousedown", "onClick(event)")
+				+atrs("onmouseover", "onMove(event)")
+				+atrs("data-nbjours", nbJours)
+				+atrs("data-nbheures", nbHeures);
 
 var table = function (matrice) {
   	return tag("table", tableAtrs, matrice.map(function(row) {
        	return tag("tr", "", row.map(function(elem) {
             return tag("td", elem, "" );
-        }).join(""+"\n"));
-    }).join(""+"\n"));
+        }).join(""));
+    }).join(""));
 };
 
-table(genererMatrice(6,11));
-
 var getCalendar = function (sondageId) {
-	document.getElementById(" ").innerHTML = table();
-	return 'Calendrier <b>' + sondageId + '</b> (TODO)';
+	var contenu = readFile('template/calendar.html');     // La page HTML
+    contenu = contenu.split('{{titre}}').join(sondageId); // Titre
+    contenu = contenu.split('{{table}}').join(table(genererMatrice(6,11)))
+    contenu = contenu.split('{{url}}').join('http://localhost:1337/'+sondageId)
+    return contenu;
 };
 
 // Retourne le texte HTML à afficher à l'utilisateur pour voir les
@@ -191,7 +192,7 @@ var comparer = function (x, y) {
     if ((tableauDebut[0] <= tableauFin[0])
         && (tableauDebut[1] <= tableauFin[1])
         && (tableauDebut[2] <= tableauFin[2])) {
-          return true;
+      	return true;
     } else {
 		return false;
 	}
@@ -235,7 +236,7 @@ var creerSondage = function(titre, id, dateDebut, dateFin, heureDebut, heureFin)
 	stockSondages.push({titre: titre, id: id, dateDebut: dateDebut,
                             dateFin: dateFin, heureDebut: heureDebut,
                             heureFin: heureFin});
-        return true;
+   	return true;
     }
 };
 
