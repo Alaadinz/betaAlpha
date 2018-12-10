@@ -145,22 +145,30 @@ var matrice = function (rows, cols){
     });
 };
 
-var tableAtrs = atrs("id", "calendrier")
-				+atrs("onmousedown", "onClick(event)")
-				+atrs("onmouseover", "onMove(event)")
-				+atrs("data-nbjours", "6")
-				+atrs("data-nbheures", "11");
-
 var table = function (matrice) {
+	
 	var dateJour 	= stockSondages[0].dateDebut.split("-")[2];
 	var dateMoisNum = stockSondages[0].dateDebut.split("-")[1];
 	var dateMoisTxt = mois[dateMoisNum - 1];
+	var nbDates     = stockSondages[0].dateFin.split("-")[2] - dateJour +2;
 	
 	var heureTxt = stockSondages[0].heureDebut.split("h")[0];
+	var nbHeures = stockSondages[0].heureFin.split("h")[0] - heureTxt +2;
+	
+	var tableAtrs = atrs("id", "calendrier")
+				+atrs("onmousedown", "onClick(event)")
+				+atrs("onmouseover", "onMove(event)")
+				+atrs("data-nbjours", ""+nbDates)
+				+atrs("data-nbheures", ""+nbHeures);
+	
   	return tag("table", tableAtrs, matrice.map(function(rows, i) {
        	return tag("tr", "", rows.map(function(cols, j) {
             if (i == 0) {
-                return tag("th", "", dateJour++ + " " + dateMoisTxt);
+		    	if (j == 0) {
+			    	return tag("th", "", "");
+				} else {
+                	return tag("th", "", dateJour++ + " " + dateMoisTxt);
+				}
             } else {
                 if (j == 0) {
                     return tag("th", "", heureTxt++ + "h");
