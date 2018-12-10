@@ -1,5 +1,9 @@
 'use strict';
 
+var cal = document.getElementById("calendrier");
+var nbHeures = cal.dataset.nbheures;
+var nbJours = cal.dataset.nbjours;
+
 document.addEventListener('DOMContentLoaded', function() {
     // TODO: Ajoutez ici du code qui doit s'exécuter au chargement de
     // la page
