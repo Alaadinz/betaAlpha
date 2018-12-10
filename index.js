@@ -147,13 +147,15 @@ var matrice = function (rows, cols){
 
 var table = function () {
 	
-	var dateJour 	= stockSondages[0].dateDebut.split("-")[2];
-	var dateMoisNum = stockSondages[0].dateDebut.split("-")[1];
-	var dateMoisTxt = mois[dateMoisNum - 1];
-	var nbDates     = stockSondages[0].dateFin.split("-")[2] - dateJour +1;
+    var chercherSondage = stockSondages[0++];
 	
-	var heureTxt 	= stockSondages[0].heureDebut.split("h")[0];
-	var nbHeures 	= stockSondages[0].heureFin.split("h")[0] - heureTxt +1;
+	var dateJour 	= chercherSondage.dateDebut.split("-")[2];
+	var dateMoisNum = chercherSondage.dateDebut.split("-")[1];
+	var dateMoisTxt = mois[dateMoisNum - 1];
+	var nbDates     = chercherSondage.dateFin.split("-")[2] - dateJour +1;
+	
+	var heureTxt 	= chercherSondage.heureDebut.split("h")[0];
+	var nbHeures 	= chercherSondage.heureFin.split("h")[0] - heureTxt +1;
 	
 	var tableAtrs 	= atrs("id", "calendrier")
 					  +atrs("onmousedown", "onClick(event)")
@@ -161,7 +163,7 @@ var table = function () {
 					  +atrs("data-nbjours", ""+nbDates)
 					  +atrs("data-nbheures", ""+nbHeures);
 	
-	var matrice = matrice(nbHeures, nbHeures);
+	var matrice = creerMatrice(nbHeures + 1, nbDates + 1);
 	
   	return tag("table", tableAtrs, matrice.map(function(rows, i) {
        	return tag("tr", "", rows.map(function(cols, j) {
@@ -185,8 +187,8 @@ var table = function () {
 var getCalendar = function (sondageId) {
 	var contenu = readFile('template/calendar.html');     // La page HTML
     contenu = contenu.split('{{titre}}').join(sondageId); // Titre
-    contenu = contenu.split('{{table}}').join(table())
-    contenu = contenu.split('{{url}}').join('http://localhost:1337/'+sondageId)
+    contenu = contenu.split('{{table}}').join(table());
+    contenu = contenu.split('{{url}}').join('http://localhost:1337/'+sondageId);
     return contenu;
 };
 
