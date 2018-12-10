@@ -145,10 +145,6 @@ var genererMatrice = function (largeur, hauteur){
     });
 };
 
-//var cal = document.getElementById("calendrier");  //A MODIFIER CAR PAR 6 ET 11.
-//var nbHeures = cal.dataset.nbheures;
-//var nbJours = cal.dataset.nbjours;
-
 var tableAtrs = atrs("id", "calendrier")
 				+atrs("onmousedown", "onClick(event)")
 				+atrs("onmouseover", "onMove(event)")
