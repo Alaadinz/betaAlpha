@@ -137,10 +137,10 @@ var style = function (proprietes) {
     return "style=\"" + proprietes + "\"";
 };
 
-var genererMatrice = function (largeur, hauteur){
-    return Array(hauteur).fill(0).map(function (y, i) {
-        return Array(largeur).fill(0).map(function(x,j){
-          return atrs("id", i + "-" + j); // elem
+var matrice = function (rows, cols){
+    return Array(rows).fill(0).map(function (y, i) {
+        return Array(cols).fill(0).map(function(x, j){
+            return atrs("id", (i-1) +"-"+ (j-1));
         });
     });
 };
@@ -148,13 +148,21 @@ var genererMatrice = function (largeur, hauteur){
 var tableAtrs = atrs("id", "calendrier")
 				+atrs("onmousedown", "onClick(event)")
 				+atrs("onmouseover", "onMove(event)")
-				+atrs("data-nbjours", nbJours)
-				+atrs("data-nbheures", nbHeures);
+				+atrs("data-nbjours", "6")
+				+atrs("data-nbheures", "11");
 
 var table = function (matrice) {
-  	return tag("table", tableAtrs, matrice.map(function(row) {
-       	return tag("tr", "", row.map(function(elem) {
-            return tag("td", elem, "" );
+  	return tag("table", tableAtrs, matrice.map(function(rows, i) {
+       	return tag("tr", "", rows.map(function(cols, j) {
+            if (i == 0) {
+                return tag("th", "", "dates");
+            } else {
+                if (j == 0) {
+                    return tag("th", "", "heures");
+                } else {
+            		return tag("td", cols, "" );
+                }
+            }
         }).join(""));
     }).join(""));
 };
