@@ -152,15 +152,20 @@ var tableAtrs = atrs("id", "calendrier")
 				+atrs("data-nbheures", "11");
 
 var table = function (matrice) {
+	var dateJour 	= stockSondages[0].dateDebut.split("-")[2];
+	var dateMoisNum = stockSondages[0].dateDebut.split("-")[1];
+	var dateMoisTxt = mois[dateMoisNum - 1];
+	
+	var heureTxt = stockSondages[0].heureDebut.split("h")[0];
   	return tag("table", tableAtrs, matrice.map(function(rows, i) {
        	return tag("tr", "", rows.map(function(cols, j) {
             if (i == 0) {
-                return tag("th", "", "dates");
+                return tag("th", "", dateJour++ + " " + dateMoisTxt);
             } else {
                 if (j == 0) {
-                    return tag("th", "", "heures");
+                    return tag("th", "", heureTxt++ + "h");
                 } else {
-            		return tag("td", cols, "" );
+            		return tag("td", cols, "");
                 }
             }
         }).join(""));
@@ -170,7 +175,7 @@ var table = function (matrice) {
 var getCalendar = function (sondageId) {
 	var contenu = readFile('template/calendar.html');     // La page HTML
     contenu = contenu.split('{{titre}}').join(sondageId); // Titre
-    contenu = contenu.split('{{table}}').join(table(genererMatrice(6,11)))
+    contenu = contenu.split('{{table}}').join(table(matrice(7,11)))
     contenu = contenu.split('{{url}}').join('http://localhost:1337/'+sondageId)
     return contenu;
 };
