@@ -145,9 +145,11 @@ var matrice = function (rows, cols){
     });
 };
 
+var init = 0; // instances du sondages, chaques nouveau augmente le nombre
+
 var table = function () {
 	
-    var chercherSondage = stockSondages[0++];
+    var chercherSondage = stockSondages[init++];
 	
 	var dateJour 	= chercherSondage.dateDebut.split("-")[2];
 	var dateMoisNum = chercherSondage.dateDebut.split("-")[1];
