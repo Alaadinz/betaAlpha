@@ -130,44 +130,81 @@ var atrs = function (name, content){
 //Fonction pour crée les tags
 var tag = function (name, attribut, content){
    return "<" + name + (attribut.length == 0 ? "" : " ") + attribut + ">"
-    + content + "</"+name+">";
+   		  + content + "</"+name+">";
 };
 
 var style = function (proprietes) {
     return "style=\"" + proprietes + "\"";
 };
 
-var genererMatrice = function (largeur, hauteur){
-    return Array(hauteur).fill(0).map(function (y, i) {
-        return Array(largeur).fill(0).map(function(x,j){
-          return atrs("id", i + "-" + j); // elem
+var creerMatrice = function (rows, cols){
+    return Array(rows).fill(0).map(function (y, i) {
+        return Array(cols).fill(0).map(function(x, j){
+            return atrs("id", (i-1) +"-"+ (j-1));
         });
     });
 };
 
-var cal = document.getElementById("calendrier");
-var nbHeures = cal.dataset.nbheures;
-var nbJours = cal.dataset.nbjours;
-
-var tableAtrs = atrs("id", "calendrier")+"\n"
-+atrs("onmousedown", "onClick(event)")+"\n"
-+atrs("onmouseover", "onMove(event)")+"\n"
-+atrs("data-nbjours", nbJours)+"\n"
-+atrs("data-nbheures", nbHeures);
-
-var table = function (matrice) {
-  	return tag("table", tableAtrs, matrice.map(function(row) {
-       	return tag("tr", "", row.map(function(elem) {
-            return tag("td", elem, "" );
-        }).join(""+"\n"));
-    }).join(""+"\n"));
+var jourAdd = function (texte, i) {
+    var date = new Date(texte.split("-")).getTime();
+    date += i * (3600 * 24 * 1000); // add days
+	
+    var dateYear   = new Date(date).getFullYear();
+    var dateMonth  = new Date(date).getMonth() + 1; // starts at 0
+    var dateDay    = new Date(date).getDate();
+	
+    var currentDay = [dateYear, dateMonth, dateDay];
+    return currentDay;
 };
 
-table(genererMatrice(6,11));
+var initPage = 0; // instances du sondages, chaques nouveau augmente le nombre
+
+var table = function () {
+	
+    var chercherSondage = stockSondages[initPage++];
+	
+	var dateDebut = chercherSondage.dateDebut;
+	var dateFin = chercherSondage.dateFin;
+	var heureDebut = chercherSondage.heureDebut.split("h")[0];
+	var heureFin = chercherSondage.heureFin.split("h")[0];
+	
+	var nbDates = joursDiff(dateDebut, dateFin) + 1;
+	var nbHeures = +heureFin - +heureDebut + 1;
+	
+	var tableAtrs 	= atrs("id", "calendrier")
+					  +atrs("onmousedown", "onClick(event)")
+					  +atrs("onmouseover", "onMove(event)")
+					  +atrs("data-nbjours", ""+nbDates)
+					  +atrs("data-nbheures", ""+nbHeures);
+	
+	var matrice = creerMatrice(nbHeures + 1, nbDates + 1);
+	
+    return tag("table", tableAtrs, matrice.map(function(rows, i) {
+        return tag("tr", "", rows.map(function(cols, j) {
+            if (i == 0) {
+                if (j == 0) {
+                    return tag("th", "", "");
+                } else {
+                    return tag("th", "", jourAdd(dateDebut, j - 1)[2]+ " "
+                           +mois[jourAdd(dateDebut, j - 1)[1] - 1]);
+                }
+            } else {
+                if (j == 0) {
+                    return tag("th", "", +heureDebut + i - 1 + "h");
+                } else {
+                    return tag("td", cols, "");
+                }
+            }
+        }).join(""));
+    }).join(""));
+};
 
 var getCalendar = function (sondageId) {
-	document.getElementById(" ").innerHTML = table();
-	return 'Calendrier <b>' + sondageId + '</b> (TODO)';
+	var contenu = readFile('template/calendar.html');     // La page HTML
+    contenu = contenu.split('{{titre}}').join(sondageId); // Titre
+    contenu = contenu.split('{{table}}').join(table());
+    contenu = contenu.split('{{url}}').join('http://localhost:1337/'+sondageId);
+    return contenu;
 };
 
 // Retourne le texte HTML à afficher à l'utilisateur pour voir les
@@ -184,23 +221,21 @@ var getResults = function (sondageId) {
 // Doit retourner false si les informations ne sont pas valides, ou
 // true si le sondage a été créé correctement.
 
-var comparer = function (x, y) {
-    var tableauDebut  = x.split("-");
-    var tableauFin    = y.split("-");
+var comparer = function (debut, fin) {
+    var dateDebut  = new Date(debut).getTime();
+    var dateFin    = new Date(fin).getTime();
 
-    if ((tableauDebut[0] <= tableauFin[0])
-        && (tableauDebut[1] <= tableauFin[1])
-        && (tableauDebut[2] <= tableauFin[2])) {
-          return true;
+    if (dateDebut <= dateFin) {
+      	return true;
     } else {
 		return false;
 	}
 };
 
-var joursDiff = function (x, y) {
-    var debut = new Date(x.split("-"));
-    var fin   = new Date(y.split("-"));
-    var tempsDiff = fin.getTime() - debut.getTime(); // retour en millisecondes
+var joursDiff = function (debut, fin) {
+    var dateDebut = new Date(debut.split("-"));
+    var dateFin   = new Date(fin.split("-"));
+    var tempsDiff = dateFin.getTime() - dateDebut.getTime(); // retour en millisecondes
     var joursDiff = tempsDiff / (3600 * 24 * 1000);  // division pour remettre en jours
     return joursDiff;
 };
@@ -235,7 +270,7 @@ var creerSondage = function(titre, id, dateDebut, dateFin, heureDebut, heureFin)
 	stockSondages.push({titre: titre, id: id, dateDebut: dateDebut,
                             dateFin: dateFin, heureDebut: heureDebut,
                             heureFin: heureFin});
-        return true;
+   	return true;
     }
 };
 
