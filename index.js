@@ -145,19 +145,33 @@ var matrice = function (rows, cols){
     });
 };
 
-var init = 0; // instances du sondages, chaques nouveau augmente le nombre
+var jourAdd = function (texte, i) {
+    var date = new Date(texte.split("-")).getTime();
+    date += i * (3600 * 24 * 1000); // add days
+	
+    var dateYear   = new Date(date).getFullYear();
+    var dateMonth  = new Date(date).getMonth() + 1; // starts at 0
+    var dateDay    = new Date(date).getDate();
+	
+    var currentDay = [dateYear, dateMonth, dateDay];
+    return currentDay;
+};
+
+var initPage = 0; // instances du sondages, chaques nouveau augmente le nombre
+var initDay = 0;
+var initMonth = 0;
 
 var table = function () {
 	
-    var chercherSondage = stockSondages[init++];
+    var chercherSondage = stockSondages[initPage++];
 	
-	var dateJour 	= chercherSondage.dateDebut.split("-")[2];
-	var dateMoisNum = chercherSondage.dateDebut.split("-")[1];
-	var dateMoisTxt = mois[dateMoisNum - 1];
-	var nbDates     = chercherSondage.dateFin.split("-")[2] - dateJour +1;
+	var dateDebut = chercherSondage.dateDebut;
+	var dateFin = chercherSondage.dateFin;
+	var heureDebut = chercherSondage.heureDebut.split("h")[0];
+	var heureFin = chercherSondage.heureFin.split("h")[0];
 	
-	var heureTxt 	= chercherSondage.heureDebut.split("h")[0];
-	var nbHeures 	= chercherSondage.heureFin.split("h")[0] - heureTxt +1;
+	var nbDates = joursDiff(dateDebut, dateFin) + 1;
+	var nbHeures = +heureFin - +heureDebut + 1;
 	
 	var tableAtrs 	= atrs("id", "calendrier")
 					  +atrs("onmousedown", "onClick(event)")
@@ -173,11 +187,11 @@ var table = function () {
 		    	if (j == 0) {
 			    	return tag("th", "", "");
 				} else {
-                	return tag("th", "", dateJour++ + " " + dateMoisTxt);
+                	return tag("th", "", jourAdd(dateDebut, initDay++));
 				}
             } else {
                 if (j == 0) {
-                    return tag("th", "", heureTxt++ + "h");
+                    return tag("th", "", heureDebut++ + "h");
                 } else {
             		return tag("td", cols, "");
                 }
@@ -221,10 +235,10 @@ var comparer = function (x, y) {
 	}
 };
 
-var joursDiff = function (x, y) {
-    var debut = new Date(x.split("-"));
-    var fin   = new Date(y.split("-"));
-    var tempsDiff = fin.getTime() - debut.getTime(); // retour en millisecondes
+var joursDiff = function (debut, fin) {
+    var dateDebut = new Date(debut.split("-"));
+    var dateFin   = new Date(fin.split("-"));
+    var tempsDiff = dateFin.getTime() - dateDebut.getTime(); // retour en millisecondes
     var joursDiff = tempsDiff / (3600 * 24 * 1000);  // division pour remettre en jours
     return joursDiff;
 };
