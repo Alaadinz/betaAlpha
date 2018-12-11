@@ -137,7 +137,7 @@ var style = function (proprietes) {
     return "style=\"" + proprietes + "\"";
 };
 
-var matrice = function (rows, cols){
+var creerMatrice = function (rows, cols){
     return Array(rows).fill(0).map(function (y, i) {
         return Array(cols).fill(0).map(function(x, j){
             return atrs("id", (i-1) +"-"+ (j-1));
@@ -158,8 +158,6 @@ var jourAdd = function (texte, i) {
 };
 
 var initPage = 0; // instances du sondages, chaques nouveau augmente le nombre
-var initDay = 0;
-var initMonth = 0;
 
 var table = function () {
 	
@@ -181,19 +179,20 @@ var table = function () {
 	
 	var matrice = creerMatrice(nbHeures + 1, nbDates + 1);
 	
-  	return tag("table", tableAtrs, matrice.map(function(rows, i) {
-       	return tag("tr", "", rows.map(function(cols, j) {
+    return tag("table", tableAtrs, matrice.map(function(rows, i) {
+        return tag("tr", "", rows.map(function(cols, j) {
             if (i == 0) {
-		    	if (j == 0) {
-			    	return tag("th", "", "");
-				} else {
-                	return tag("th", "", jourAdd(dateDebut, initDay++));
-				}
+                if (j == 0) {
+                    return tag("th", "", "");
+                } else {
+                    return tag("th", "", jourAdd(dateDebut, j - 1)[2]+ " "
+                           +mois[jourAdd(dateDebut, j - 1)[1] - 1]);
+                }
             } else {
                 if (j == 0) {
-                    return tag("th", "", heureDebut++ + "h");
+                    return tag("th", "", +heureDebut + i - 1 + "h");
                 } else {
-            		return tag("td", cols, "");
+                    return tag("td", cols, "");
                 }
             }
         }).join(""));
@@ -222,13 +221,11 @@ var getResults = function (sondageId) {
 // Doit retourner false si les informations ne sont pas valides, ou
 // true si le sondage a été créé correctement.
 
-var comparer = function (x, y) {
-    var tableauDebut  = x.split("-");
-    var tableauFin    = y.split("-");
+var comparer = function (debut, fin) {
+    var dateDebut  = new Date(debut).getTime();
+    var dateFin    = new Date(fin).getTime();
 
-    if ((tableauDebut[0] <= tableauFin[0])
-        && (tableauDebut[1] <= tableauFin[1])
-        && (tableauDebut[2] <= tableauFin[2])) {
+    if (dateDebut <= dateFin) {
       	return true;
     } else {
 		return false;
