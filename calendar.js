@@ -3,13 +3,7 @@
 document.addEventListener('DOMContentLoaded', function() {
 });
 
-var dispos = Array(+nbHeures).fill('0').map(function(x) {
-    return Array(+nbJours).fill('0'); });
-
 function onClick(event) {
-    var cal = document.getElementById("calendrier");
-    var nbHeures = cal.dataset.nbheures;
-    var nbJours = cal.dataset.nbjours;
     /* La variable t contient l'élément HTML sur lequel le clic a été
        fait. Notez qu'il ne s'agit pas forcément d'une case <td> du
        tableau */
@@ -17,15 +11,11 @@ function onClick(event) {
 
     // Attribut id de l'élément sur lequel le clic a été fait
     var id = t.id;
-    var idRows = +id.split('-')[0];
-    var idCols = +id.split('-')[1];
     var selection = document.getElementById(id);
     if (selection.innerHTML == '') {
         selection.innerHTML = '&#10003';
-        dispos[idRows][idCols] = '1';
     } else {
         selection.innerHTML = '';
-        dispos[idRows][idCols] = '0';
     }
 }
 
@@ -37,10 +27,25 @@ function onMove(event) {
 }
 
 var compacterDisponibilites = function() {
+    
     var cal = document.getElementById("calendrier");
     var nbHeures = cal.dataset.nbheures;
     var nbJours = cal.dataset.nbjours;
+    
+    var resultat = [];
+    var selection;
 
-    var resultat = +dispos.join('').split(',').join('');
+    for (var i = 0; i < nbHeures; i++) {
+        for (var j = 0; j < nbJours; j++) {
+            selection = document.getElementById(i+'-'+j);
+            if (selection.innerHTML == '') {
+                resultat.push('0');
+            } else {
+                resultat.push('1');
+            }
+        }
+    }
+
+    resultat = +resultat.join('').split(',').join('');
     return resultat;
 };
