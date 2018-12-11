@@ -212,8 +212,8 @@ var getCalendar = function (sondageId) {
 //
 // Doit retourner false si le calendrier demandé n'existe pas
 var getResults = function (sondageId) {
-    // TODO
-    return 'Resultats du sondage <b>' + sondageId + '</b> (TODO)';
+    var resultat = stockRep[0].disponibilites;
+    return 'Resultats du sondage <b>' + sondageId + '</b>' + resultat;
 };
 
 // Crée un sondage à partir des informations entrées
@@ -279,8 +279,12 @@ var creerSondage = function(titre, id, dateDebut, dateFin, heureDebut, heureFin)
 // fourni par la fonction compacterDisponibilites() de public/calendar.js
 //
 // Cette fonction ne retourne rien
+
+var stockRep = [];
+
 var ajouterParticipant = function(sondageId, nom, disponibilites) {
-    // TODO
+    stockRep.push({sondageId: sondageId, nom: nom,
+                             disponibilites: disponibilites});
 };
 
 // Génère la `i`ème couleur parmi un nombre total `total` au format
