@@ -1,13 +1,13 @@
 'use strict';
 
-var cal = document.getElementById("calendrier");
-var nbHeures = cal.dataset.nbheures;
-var nbJours = cal.dataset.nbjours;
-
 document.addEventListener('DOMContentLoaded', function() {
     // TODO: Ajoutez ici du code qui doit s'exécuter au chargement de
     // la page
 });
+
+var cal = document.getElementById("calendrier");
+var nbHeures = cal.dataset.nbheures;
+var nbJours = cal.dataset.nbjours;
 
 function onClick(event) {
     // TODO
@@ -19,6 +19,12 @@ function onClick(event) {
 
     // Attribut id de l'élément sur lequel le clic a été fait
     var id = t.id;
+    var selection = document.getElementById(id);
+    if (selection.innerHTML != '1') {
+        selection.innerHTML = '1';     
+    } else {
+        selection.innerHTML = ''; 
+    }
 }
 
 function onMove(event) {
