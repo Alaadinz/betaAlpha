@@ -1,18 +1,15 @@
 'use strict';
 
 document.addEventListener('DOMContentLoaded', function() {
- //???
 });
 
-var cal = document.getElementById("calendrier");
-var nbHeures = cal.dataset.nbheures;
-var nbJours = cal.dataset.nbjours;
-
 var dispos = Array(+nbHeures).fill('0').map(function(x) {
-             return Array(+nbJours).fill('0'); });
+    return Array(+nbJours).fill('0'); });
 
 function onClick(event) {
-
+    var cal = document.getElementById("calendrier");
+    var nbHeures = cal.dataset.nbheures;
+    var nbJours = cal.dataset.nbjours;
     /* La variable t contient l'élément HTML sur lequel le clic a été
        fait. Notez qu'il ne s'agit pas forcément d'une case <td> du
        tableau */
@@ -40,6 +37,10 @@ function onMove(event) {
 }
 
 var compacterDisponibilites = function() {
+    var cal = document.getElementById("calendrier");
+    var nbHeures = cal.dataset.nbheures;
+    var nbJours = cal.dataset.nbjours;
+
     var resultat = +dispos.join('').split(',').join('');
     return resultat;
 };
