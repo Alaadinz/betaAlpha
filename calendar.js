@@ -9,6 +9,7 @@ var cal = document.getElementById("calendrier");
 var nbHeures = cal.dataset.nbheures;
 var nbJours = cal.dataset.nbjours;
 
+
 function onClick(event) {
     // TODO
 
@@ -20,8 +21,8 @@ function onClick(event) {
     // Attribut id de l'élément sur lequel le clic a été fait
     var id = t.id;
     var selection = document.getElementById(id);
-    if (selection.innerHTML != '1') {
-        selection.innerHTML = '1';     
+    if (selection.innerHTML == '') {
+        selection.innerHTML = '&#10003';     
     } else {
         selection.innerHTML = ''; 
     }
