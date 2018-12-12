@@ -46,6 +46,6 @@ var compacterDisponibilites = function() {
         }
     }
 
-    resultat = +resultat.join('').split(',').join('');
+    resultat = resultat.join('').split(',').join('');
     return resultat;
 };
