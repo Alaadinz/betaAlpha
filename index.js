@@ -402,22 +402,35 @@ var ajouterParticipant = function(sondageId, nom, disponibilites) {
 // commence en rouge, qui passe par toutes les autres couleurs et qui
 // revient à rouge.
 
+var hexConvert = function (number) {
+    var resultat = number;
+    var target;
+    var char;
+    // prend en parametre les nbs du string et le retourne en lettrage
+    for (var i = 0; i < 6; i++ ) {
+        target = 10 + i + "";
+        char = String.fromCharCode(65 + i);
+        if (number.indexOf(target) >= 0) {
+    		resultat = resultat.split(target).join(char);
+        }
+    }
+    // les resultats seront de ce format "##"
+    if (resultat.length == 1) {
+        resultat = "0" + resultat;
+    }
+	return resultat;
+};
+
 var format = function (entier, base) { // nombre a hexadecimal
     var n = Math.floor(entier);
     var resultat = "";
+
     do {
         resultat = n % base + resultat;
         n = Math.floor(n / base);
     } while (n > 0);
-    resultat = resultat.split("10").join("A");
-    resultat = resultat.split("11").join("B");
-    resultat = resultat.split("12").join("C");
-    resultat = resultat.split("13").join("D");
-    resultat = resultat.split("14").join("E");
-    resultat = resultat.split("15").join("F");
-    if (resultat.length == 1) {
-        resultat = "0" + resultat;
-    }
+    // convertit le nb hexadecimal (ex: "1515") en bon caractere (ex: "FF").
+    resultat = hexConvert(resultat);
     return resultat;
 };
 
@@ -430,16 +443,19 @@ var genColor = function(i, nbTotal) {
     var x = c * (1 - Math.abs(h % 2 - 1));
 
     switch (Math.floor(h)) {
+
         case 0: resultat.push(c, x, 0); break;
         case 1: resultat.push(x, c, 0); break;
         case 2: resultat.push(0, c, x); break;
         case 3: resultat.push(0, x, c); break;
         case 4: resultat.push(x, 0, c); break;
         case 5: resultat.push(c, 0, x); break;
+
         default: resultat.push(0, 0, 0);
     }
     // retourne resultat en format ["RR", "GG", "BB"].
     resultat = resultat.map(function(x) { return format(x*255, 16); });
+
     // retourne resultat en format "#RRGGBB".
     resultat = resultat.reduce(function(x, y) { return x + y; }, "#");
     return resultat;
