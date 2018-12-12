@@ -287,7 +287,7 @@ var stockColor = []; // stockages des couleurs
 var legende = function (sondageId) {
     var parts = Array(nbPart(sondageId)).fill(0);
     var couleur = parts.map(function(x, i) { return ''
-    + genColor(i+1, nbPart(sondageId)) });
+    + genColor(i, nbPart(sondageId)) });
     var atrsLegend;
     var noms = listeNoms(sondageId);
     stockColor.push(couleur);
