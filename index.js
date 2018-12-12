@@ -248,14 +248,16 @@ var listeNoms = function (sondageId) {
     return resultat;
 };
 
+var stockColor = []; // stockages des couleurs
+
 var legende = function (sondageId) {
     var parts = Array(nbPart(sondageId)).fill(0);
     var couleur = parts.map(function(x, i) { return 'background-color:'
     + genColor(i+1, nbPart(sondageId)) });
     var noms = listeNoms(sondageId);
-
+    stockColor.push(couleur);
     return tag("ul", "", Array(parts.length).fill(0).map( function(x, i) {
-        return tag("li", style(couleur[i]), noms[i]);
+        return tag("li", style(stockColor[0][i]), noms[i]);
     }).join(""));
 };
 
@@ -268,7 +270,7 @@ var getResults = function (sondageId) {
     contenu = contenu.split('{{url}}').join('http://localhost:1337/'
     +sondageId+'/results');
     contenu = contenu.split('{{legende}}').join(legende(sondageId));
-
+    stockColor.pop();
     return contenu;
 };
 
