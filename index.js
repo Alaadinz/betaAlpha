@@ -133,10 +133,6 @@ var tag = function (name, attribut, content){
    		  + content + "</"+name+">";
 };
 
-var style = function (proprietes) {
-    return "style=\"" + proprietes + "\"";
-};
-
 var creerMatrice = function (rows, cols){
     return Array(rows).fill(0).map(function (y, i) {
         return Array(cols).fill(0).map(function(x, j){
@@ -157,16 +153,24 @@ var jourAdd = function (texte, i) {
     return currentDay;
 };
 
-var initPage = 0; // instances du sondages, chaques nouveau augmente le nombre
+var findPosStock = function (target, stock) {
+    for (var i = 0; i < stock.length; i++) {
+        if (stock[i].id == target) {
+            return stock[i];
+        } else {
+            return -1;
+        }
+    }
+};
 
-var table = function () {
+var tab = function (sondageId, version) {
 	
-    var chercherSondage = stockSondages[initPage++];
+    var sondage = findPosStock(sondageId, stockSondages);
 	
-	var dateDebut = chercherSondage.dateDebut;
-	var dateFin = chercherSondage.dateFin;
-	var heureDebut = chercherSondage.heureDebut.split("h")[0];
-	var heureFin = chercherSondage.heureFin.split("h")[0];
+	var dateDebut = sondage.dateDebut;
+	var dateFin = sondage.dateFin;
+	var heureDebut = sondage.heureDebut.split("h")[0];
+	var heureFin = sondage.heureFin.split("h")[0];
 	
 	var nbDates = joursDiff(dateDebut, dateFin) + 1;
 	var nbHeures = +heureFin - +heureDebut + 1;
@@ -179,7 +183,8 @@ var table = function () {
 	
 	var matrice = creerMatrice(nbHeures + 1, nbDates + 1);
 	
-    return tag("table", tableAtrs, matrice.map(function(rows, i) {
+    return tag("table", (version == "sondage" ? tableAtrs : ""),
+    matrice.map(function(rows, i) {
         return tag("tr", "", rows.map(function(cols, j) {
             if (i == 0) {
                 if (j == 0) {
@@ -192,7 +197,8 @@ var table = function () {
                 if (j == 0) {
                     return tag("th", "", +heureDebut + i - 1 + "h");
                 } else {
-                    return tag("td", cols, "");
+                    return tag("td", (version == "sondage" ? cols :
+                    atrs("class", "max")), "");
                 }
             }
         }).join(""));
@@ -202,7 +208,7 @@ var table = function () {
 var getCalendar = function (sondageId) {
 	var contenu = readFile('template/calendar.html');     // La page HTML
     contenu = contenu.split('{{titre}}').join(sondageId); // Titre
-    contenu = contenu.split('{{table}}').join(table());
+    contenu = contenu.split('{{table}}').join(tab(sondageId, "sondage"));
     contenu = contenu.split('{{url}}').join('http://localhost:1337/'+sondageId);
     return contenu;
 };
@@ -211,9 +217,16 @@ var getCalendar = function (sondageId) {
 // résultats du sondage demandé
 //
 // Doit retourner false si le calendrier demandé n'existe pas
+
+// Legende pas encore complete
+
 var getResults = function (sondageId) {
-    var resultat = stockRep[0].disponibilites;
-    return 'Resultats du sondage <b>' + sondageId + '</b>' + resultat;
+    var contenu = readFile('template/results.html');
+    contenu = contenu.split('{{titre}}').join(sondageId);
+    contenu = contenu.split('{{table}}').join(tab(sondageId, "resultat"));
+    contenu = contenu.split('{{url}}').join('http://localhost:1337/'
+    +sondageId+'/results');
+    return contenu;
 };
 
 // Crée un sondage à partir des informations entrées
@@ -283,8 +296,8 @@ var creerSondage = function(titre, id, dateDebut, dateFin, heureDebut, heureFin)
 var stockRep = [];
 
 var ajouterParticipant = function(sondageId, nom, disponibilites) {
-    stockRep.push({sondageId: sondageId, nom: nom,
-                             disponibilites: disponibilites});
+    stockRep.push({id: sondageId, nom: nom,
+                   disponibilites: disponibilites});
 };
 
 // Génère la `i`ème couleur parmi un nombre total `total` au format
@@ -294,11 +307,49 @@ var ajouterParticipant = function(sondageId, nom, disponibilites) {
 // toutes les couleurs et les afficher devrait donner un joli dégradé qui
 // commence en rouge, qui passe par toutes les autres couleurs et qui
 // revient à rouge.
-var genColor = function(i, nbTotal) {
-    // TODO
-    return '#000000';
+
+var format = function (entier, base) { // nombre a hexadecimal
+    var n = Math.floor(entier);
+    var resultat = "";
+    do {
+        resultat = n % base + resultat;
+        n = Math.floor(n / base);
+    } while (n > 0);
+    resultat = resultat.split("10").join("A");
+    resultat = resultat.split("11").join("B");
+    resultat = resultat.split("12").join("C");
+    resultat = resultat.split("13").join("D");
+    resultat = resultat.split("14").join("E");
+    resultat = resultat.split("15").join("F");
+    if (resultat.length == 1) {
+        resultat = "0" + resultat;
+    }
+    return resultat;
 };
 
+var genColor = function(i, nbTotal) {
+
+    var resultat = [];
+    var teinte = (i / nbTotal) * 360;
+    var h = teinte / 60;
+    var c = 0.7;
+    var x = c * (1 - Math.abs(h % 2 - 1));
+
+    switch (Math.floor(h)) {
+        case 0: resultat.push(c, x, 0); break;
+        case 1: resultat.push(x, c, 0); break;
+        case 2: resultat.push(0, c, x); break;
+        case 3: resultat.push(0, x, c); break;
+        case 4: resultat.push(x, 0, c); break;
+        case 5: resultat.push(c, 0, x); break;
+        default: resultat.push(0, 0, 0);
+    }
+    // retourne resultat en format ["RR", "GG", "BB"].
+    resultat = resultat.map(function(x) { return format(x*255, 16); });
+    // retourne resultat en format "#RRGGBB".
+    resultat = resultat.reduce(function(x, y) { return x + y; }, "#");
+    return resultat;
+};
 
 /*
  * Création du serveur HTTP
