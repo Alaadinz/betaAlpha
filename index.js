@@ -123,17 +123,21 @@ var MILLIS_PAR_JOUR = (24 * 60 * 60 * 1000);
 //ne pas être undefined. Ce tableau utilise les fonction map et des itterations
 //de i pour les "tr" et j pour les "td" pour y inserer des valeurs.
 
-var atrs = function (name, content){
+var atrs = function (name, content) {
    return name + "=\"" + content + "\"";
 };
 
 //Fonction pour crée les tags
-var tag = function (name, attribut, content){
+var tag = function (name, attribut, content) {
    return "<" + name + (attribut.length == 0 ? "" : " ") + attribut + ">"
    		  + content + "</"+name+">";
 };
 
-var creerMatrice = function (rows, cols){
+var style = function (atrs) {
+    return "style=\"" + atrs + "\""; 
+};
+
+var creerMatrice = function (rows, cols) {
     return Array(rows).fill(0).map(function (y, i) {
         return Array(cols).fill(0).map(function(x, j){
             return atrs("id", (i-1) +"-"+ (j-1));
@@ -222,15 +226,49 @@ var getCalendar = function (sondageId) {
 //
 // Doit retourner false si le calendrier demandé n'existe pas
 
-// Legende pas encore complete
+var nbPart = function (sondageId) {
+    var liste = stockRep;
+    var resultat = 0;
+    for (var i = 0; i < liste.length; i++) {
+        if (liste[i].id == sondageId) {
+            resultat += 1;
+        }
+    }
+    return resultat;
+};
+
+var listeNoms = function (sondageId) {
+    var liste = stockRep;
+    var resultat = [];
+    for (var i = 0; i < liste.length; i++) {
+        if (liste[i].id == sondageId) {
+            resultat.push(liste[i].nom);
+        }
+    }
+    return resultat;
+};
+
+var legende = function (sondageId) {
+    var parts = Array(nbPart(sondageId)).fill(0);
+    var couleur = parts.map(function(x, i) { return 'background-color:'
+    + genColor(i+1, nbPart(sondageId)) });
+    var noms = listeNoms(sondageId);
+
+    return tag("ul", "", Array(parts.length).fill(0).map( function(x, i) {
+        return tag("li", style(couleur[i]), noms[i]);
+    }).join(""));
+};
 
 var getResults = function (sondageId) {
     var title = findPosStock(sondageId, stockSondages, "enr").titre;
     var contenu = readFile('template/results.html');
+
     contenu = contenu.split('{{titre}}').join(title);
     contenu = contenu.split('{{table}}').join(tab(sondageId, "resultat"));
     contenu = contenu.split('{{url}}').join('http://localhost:1337/'
     +sondageId+'/results');
+    contenu = contenu.split('{{legende}}').join(legende(sondageId));
+
     return contenu;
 };
 
