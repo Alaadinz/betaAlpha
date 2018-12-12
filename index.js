@@ -188,7 +188,10 @@ var tab = function (sondageId, version) {
 					  +atrs("data-nbjours", ""+nbDates)
 					  +atrs("data-nbheures", ""+nbHeures);
 	
-	var matrice = creerMatrice(nbHeures + 1, nbDates + 1);
+    var matrice = creerMatrice(nbHeures + 1, nbDates + 1);
+    
+    var barAtrs;
+    var noms = listeNoms(sondageId);
 	
     return tag("table", (version == "sondage" ? tableAtrs : ""),
     matrice.map(function(rows, i) {
@@ -204,8 +207,17 @@ var tab = function (sondageId, version) {
                 if (j == 0) {
                     return tag("th", "", +heureDebut + i - 1 + "h");
                 } else {
-                    return tag("td", (version == "sondage" ? cols :
-                    atrs("class", "max")), "");
+                    return tag("td", (version == "sondage" ? cols : ""),
+                        (version == "sondage" ? "" :
+                        Array(nbPart(sondageId)).fill(0).map(function(x, p) {
+                            barAtrs = "background-color:"+stockColor[0][p]
+                                    +"; color:"+stockColor[0][p];
+                            if (divide(disposPart(noms[p], sondageId), nbHeures)[i-1][j-1]
+                            == "1") {
+                                return tag("span", style(barAtrs), ".");
+                            }
+                        }).join(""))
+                    );
                 }
             }
         }).join(""));
@@ -248,29 +260,54 @@ var listeNoms = function (sondageId) {
     return resultat;
 };
 
+var disposPart = function (nom, sondageId) {
+    var liste = stockRep;
+    var resultat = "";
+    for (var i = 0; i < liste.length; i++) {
+        if (liste[i].id == sondageId
+            && liste[i].nom == nom) {
+            resultat += liste[i].disponibilites;
+        }
+    }
+    return resultat;
+};
+
+var divide = function (dispo, diviseur) {
+    var init = dispo.split("");
+    var resultat = [];
+    var long = init.length / diviseur;
+	for (var i = 0; i < diviseur; i++) {
+    	resultat.push(init.splice(0, long));
+	}
+    return resultat;
+};
+
 var stockColor = []; // stockages des couleurs
 
 var legende = function (sondageId) {
     var parts = Array(nbPart(sondageId)).fill(0);
-    var couleur = parts.map(function(x, i) { return 'background-color:'
+    var couleur = parts.map(function(x, i) { return ''
     + genColor(i+1, nbPart(sondageId)) });
+    var atrsLegend;
     var noms = listeNoms(sondageId);
     stockColor.push(couleur);
-    return tag("ul", "", Array(parts.length).fill(0).map( function(x, i) {
-        return tag("li", style(stockColor[0][i]), noms[i]);
+    
+    return tag("ul", "", Array(parts.length).fill(0).map( function(x, p) {
+        atrsLegend = "background-color: " + stockColor[0][p];
+        return tag("li", style(atrsLegend), noms[p]);
     }).join(""));
 };
 
 var getResults = function (sondageId) {
     var title = findPosStock(sondageId, stockSondages, "enr").titre;
     var contenu = readFile('template/results.html');
-
+    
+    contenu = contenu.split('{{legende}}').join(legende(sondageId));
     contenu = contenu.split('{{titre}}').join(title);
     contenu = contenu.split('{{table}}').join(tab(sondageId, "resultat"));
-    contenu = contenu.split('{{url}}').join('http://localhost:1337/'
-    +sondageId+'/results');
-    contenu = contenu.split('{{legende}}').join(legende(sondageId));
+    contenu = contenu.split('{{url}}').join('http://localhost:1337/'+sondageId);
     stockColor.pop();
+    
     return contenu;
 };
 
@@ -295,6 +332,7 @@ var joursDiff = function (debut, fin) {
     var dateFin   = new Date(fin.split("-"));
     var tempsDiff = dateFin.getTime() - dateDebut.getTime(); // retour en millisecondes
     var joursDiff = tempsDiff / (3600 * 24 * 1000);  // division pour remettre en jours
+    
     return joursDiff;
 };
 
