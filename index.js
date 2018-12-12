@@ -364,10 +364,14 @@ var creerSondage = function(titre, id, dateDebut, dateFin, heureDebut, heureFin)
         return false;
     } else {
         if (findPosStock(id, stockSondages, "position") >= 0) {
+            // enleve sondage mm id
             stockSondages.splice(findPosStock(id, stockSondages, "position"), 1);
             stockSondages.push({titre: titre, id: id, dateDebut: dateDebut,
                 dateFin: dateFin, heureDebut: heureDebut,
                 heureFin: heureFin});
+            do {
+                stockRep.splice(findPosStock(id, stockRep, "position"), 1);
+            } while (findPosStock(id, stockRep, "position") >= 0);
         } else {
 	        stockSondages.push({titre: titre, id: id, dateDebut: dateDebut,
                             dateFin: dateFin, heureDebut: heureDebut,
