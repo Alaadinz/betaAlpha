@@ -153,19 +153,22 @@ var jourAdd = function (texte, i) {
     return currentDay;
 };
 
-var findPosStock = function (target, stock) {
+var findPosStock = function (target, stock, pos) {
     for (var i = 0; i < stock.length; i++) {
         if (stock[i].id == target) {
-            return stock[i];
-        } else {
-            return -1;
+            if (pos == "position") {
+                return i;
+            } else { // recherche enregistrement
+                return stock[i];
+            }
         }
     }
+    return -1;
 };
 
 var tab = function (sondageId, version) {
 	
-    var sondage = findPosStock(sondageId, stockSondages);
+    var sondage = findPosStock(sondageId, stockSondages, "enr");
 	
 	var dateDebut = sondage.dateDebut;
 	var dateFin = sondage.dateFin;
@@ -206,8 +209,9 @@ var tab = function (sondageId, version) {
 };
 
 var getCalendar = function (sondageId) {
+    var title = findPosStock(sondageId, stockSondages, "enr").titre;
 	var contenu = readFile('template/calendar.html');     // La page HTML
-    contenu = contenu.split('{{titre}}').join(sondageId); // Titre
+    contenu = contenu.split('{{titre}}').join(title); // Titre
     contenu = contenu.split('{{table}}').join(tab(sondageId, "sondage"));
     contenu = contenu.split('{{url}}').join('http://localhost:1337/'+sondageId);
     return contenu;
@@ -221,8 +225,9 @@ var getCalendar = function (sondageId) {
 // Legende pas encore complete
 
 var getResults = function (sondageId) {
+    var title = findPosStock(sondageId, stockSondages, "enr").titre;
     var contenu = readFile('template/results.html');
-    contenu = contenu.split('{{titre}}').join(sondageId);
+    contenu = contenu.split('{{titre}}').join(title);
     contenu = contenu.split('{{table}}').join(tab(sondageId, "resultat"));
     contenu = contenu.split('{{url}}').join('http://localhost:1337/'
     +sondageId+'/results');
@@ -280,9 +285,16 @@ var creerSondage = function(titre, id, dateDebut, dateFin, heureDebut, heureFin)
         || (!(joursDiff(dateDebut, dateFin) <= 30))) { // Les caracteres permis
         return false;
     } else {
-	stockSondages.push({titre: titre, id: id, dateDebut: dateDebut,
+        if (findPosStock(id, stockSondages, "position") >= 0) {
+            stockSondages.splice(findPosStock(id, stockSondages, "position"), 1);
+            stockSondages.push({titre: titre, id: id, dateDebut: dateDebut,
+                dateFin: dateFin, heureDebut: heureDebut,
+                heureFin: heureFin});
+        } else {
+	        stockSondages.push({titre: titre, id: id, dateDebut: dateDebut,
                             dateFin: dateFin, heureDebut: heureDebut,
                             heureFin: heureFin});
+        }
    	return true;
     }
 };
