@@ -170,6 +170,20 @@ var findPosStock = function (target, stock, pos) {
     return -1;
 };
 
+var minOuMax = function (sondageId, nbHeures, i, j) {
+    var matriceDispos = divide(tabDesParts(sondageId).join(""),
+    nbPart(sondageId)).map(function(x) { return divide(x.join(""), nbHeures);
+    }).reduce(sumDispos);
+    if (+matriceDispos[i-1][j-1] == minMax(matriceDispos)[0]) {
+        return "min";
+    }
+    if (+matriceDispos[i-1][j-1] == minMax(matriceDispos)[1]) {
+        return "max";
+    } else {
+        return "";
+    }
+};
+
 var tab = function (sondageId, version) {
 	
     var sondage = findPosStock(sondageId, stockSondages, "enr");
@@ -192,7 +206,7 @@ var tab = function (sondageId, version) {
     
     var barAtrs;
     var noms = listeNoms(sondageId);
-	
+
     return tag("table", (version == "sondage" ? tableAtrs : ""),
     matrice.map(function(rows, i) {
         return tag("tr", "", rows.map(function(cols, j) {
@@ -207,7 +221,8 @@ var tab = function (sondageId, version) {
                 if (j == 0) {
                     return tag("th", "", +heureDebut + i - 1 + "h");
                 } else {
-                    return tag("td", (version == "sondage" ? cols : ""),
+                    return tag("td", (version == "sondage" ? cols : atrs("class",
+                    minOuMax(sondageId, nbHeures, i, j)) ), // fin de 2e elem td
                         (version == "sondage" ? "" :
                         Array(nbPart(sondageId)).fill(0).map(function(x, p) {
                             barAtrs = "background-color:"+stockColor[0][p]
@@ -270,6 +285,43 @@ var disposPart = function (nom, sondageId) {
         }
     }
     return resultat;
+};
+
+// format ["dispo", "dispo"]
+var tabDesParts = function (sondageId) {
+    var liste = stockRep;
+    var resultat = [];
+    for (var i = 0; i < liste.length; i++) {
+        if (liste[i].id == sondageId) {
+            resultat.push(liste[i].disponibilites);
+        }
+    }
+    return resultat;
+};
+
+var sumDispos = function (matrice1, matrice2) {
+    for (var i = 0; i < matrice1.length; i++) {
+        for (var j = 0; j < matrice1[i].length; j++) {
+            matrice1[i][j] = +matrice1[i][j] + +matrice2[i][j];
+        }
+    }
+    return matrice1;
+};
+
+var minMax = function(matrice) {
+    var min = Infinity;
+    var max = 0;
+    for (var i = 0; i < matrice.length; i++) {
+        for (var j = 0; j < matrice[i].length; j++) {
+            if (matrice[i][j] < min) {
+                min = matrice[i][j];
+            }
+            if (matrice[i][j] > max) {
+                max = matrice[i][j];
+            }
+        }
+    }
+    return [min, max];
 };
 
 var divide = function (dispo, diviseur) {
