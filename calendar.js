@@ -12,16 +12,18 @@ function onClick(event) {
     // Attribut id de l'élément sur lequel le clic a été fait
     var id = t.id;
     var selection = document.getElementById(id);
-    if (selection.innerHTML == '') {
-        selection.innerHTML = '&#10003';
-    } else {
-        selection.innerHTML = '';
+
+    // verifie si le id est un nb (si oui, c'est une case du tab)
+    if (+id.split("-").join("") >= 0) {
+        if (selection.innerHTML == '') {
+            selection.innerHTML = '&#10003';
+        } else {
+            selection.innerHTML = '';
+        }
     }
 }
 
 function onMove(event) {
-    // TODO
-
     var t = event.target;
     var id = t.id;
 }
