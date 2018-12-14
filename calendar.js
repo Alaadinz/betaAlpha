@@ -1,20 +1,19 @@
 'use strict';
 
 document.addEventListener('DOMContentLoaded', function() {
-    // TODO: Ajoutez ici du code qui doit s'exécuter au chargement de
-    // la page
 });
 
-var cal = document.getElementById("calendrier");
-var nbHeures = cal.dataset.nbheures;
-var nbJours = cal.dataset.nbjours;
-
-var dispos = Array(nbHeures).fill('0').map(function(x) {
-             return Array(nbJours).fill('0'); });
+var check = function (id, selection) {
+    if (+id.split("-").join("") >= 0) {
+        if (selection.innerHTML == '') {
+            selection.innerHTML = '&#10003';
+        } else {
+            selection.innerHTML = '';
+        }
+    }
+};
 
 function onClick(event) {
-    // TODO
-
     /* La variable t contient l'élément HTML sur lequel le clic a été
        fait. Notez qu'il ne s'agit pas forcément d'une case <td> du
        tableau */
@@ -22,26 +21,42 @@ function onClick(event) {
 
     // Attribut id de l'élément sur lequel le clic a été fait
     var id = t.id;
-    var idRows = +id.split('-')[0];
-    var idCols = +id.split('-')[1];
     var selection = document.getElementById(id);
-    if (selection.innerHTML == '') {
-        selection.innerHTML = '&#10003';
-        dispos[idRows][idCols] = '1';
-    } else {
-        selection.innerHTML = '';
-        dispos[idRows][idCols] = '0';
-    }
+
+    // verifie si le id est un nb (si oui, c'est une case du tab)
+    check(id, selection);
 }
 
 function onMove(event) {
-    // TODO
-
     var t = event.target;
     var id = t.id;
+    var selection = document.getElementById(id);
+    var buttonStatus= event.buttons;
+    if (buttonStatus == 1) {
+        check(id, selection);
+    }
 }
 
 var compacterDisponibilites = function() {
-    var resultat = +dispos.join('').split(',').join('');
+
+    var cal = document.getElementById("calendrier");
+    var nbHeures = cal.dataset.nbheures;
+    var nbJours = cal.dataset.nbjours;
+
+    var resultat = [];
+    var selection;
+
+    for (var i = 0; i < nbHeures; i++) {
+        for (var j = 0; j < nbJours; j++) {
+            selection = document.getElementById(i+'-'+j);
+            if (selection.innerHTML == '') {
+                resultat.push('0');
+            } else {
+                resultat.push('1');
+            }
+        }
+    }
+
+    resultat = resultat.join('').split(',').join('');
     return resultat;
 };
