@@ -524,11 +524,37 @@ function (titre, id, dateDebut, dateFin, heureDebut, heureFin) {
     }
 };
 
+// fonction verifie l'existence d'un nom dans le stock des reponses au sondageId
+var existenceNom = function (sondageId, nom) {
+    var liste = stockRep;
+    for (var i = 0; i < liste.length; i++) {
+        if (liste[i].id == sondageId
+            && liste[i].nom == nom) {
+            return true
+        }
+    }
+    return false;
+};
+
 // Ajoute un participant et ses disponibilités aux résultats d'un
 // sondage. Les disponibilités sont envoyées au format textuel
 // fourni par la fonction compacterDisponibilites() de public/calendar.js
 var ajouterParticipant = function (sondageId, nom, disponibilites) {
-    stockRep.push({ id: sondageId, nom: nom, disponibilites: disponibilites });
+    // si nom existe deja, un numero sera ajoute apres le nom
+    // ex : John devient John2
+    if (existenceNom(sondageId, nom)) {
+        var newName;
+        var i = 2;
+        do {
+            newName = nom + i;
+            i++;
+        } while(existenceNom(sondageId, newName));
+        stockRep.push({ id: sondageId, nom: newName,
+        disponibilites: disponibilites });
+    } else {
+        stockRep.push({ id: sondageId, nom: nom,
+        disponibilites: disponibilites });
+    }
 };
 
 // Génère la `i`ème couleur parmi un nombre total `total` au format
