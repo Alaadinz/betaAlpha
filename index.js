@@ -219,8 +219,9 @@ var getData = function (sondageId) {
     return [nbHeures, nbDates, heureDebut, dateDebut];
 };
 
-var tab = function (sondageId, version) {
-    // creation du calendrier en matrice	
+// cree tableau pour repondre au sondage
+var tabSondage = function (sondageId) {
+    // creation du calendrier en matrice
 	var dateDebut  = getData(sondageId)[3];
 	var heureDebut = getData(sondageId)[2];
 	var nbDates    = getData(sondageId)[1];
@@ -232,15 +233,8 @@ var tab = function (sondageId, version) {
 					  + atrs("onmouseover", "onMove(event)")
 					  + atrs("data-nbjours", "" + nbDates)
 					  + atrs("data-nbheures", "" + nbHeures);
-    // attributs de la barre de couleur
-    var barAtrs;
-    // disponibilites d'un participant a une certaine date
-    var disposParTab;
-    var noms = listeNoms(sondageId);
 
-    return tag("table",
-    (version == "sondage" ? tableAtrs : ""),
-    calendrier.map(function(rows, i) {
+    return tag("table", tableAtrs, calendrier.map(function(rows, i) {
         // colonne du tableau
         return tag("tr", "", rows.map(function(cols, j) {
             // premiere colonne...
@@ -267,16 +261,60 @@ var tab = function (sondageId, version) {
                 // ... autres elements
                 } else {
                     // cases selectionnables du calendrier
+                    return tag("td", cols, "");
+                }
+            }
+        }).join(""));
+    }).join(""));
+};
+
+// cree tableau pour visionner les resultats du sondage
+var tabResultat = function (sondageId) {
+    // creation du calendrier en matrice
+	var dateDebut  = getData(sondageId)[3];
+	var heureDebut = getData(sondageId)[2];
+	var nbDates    = getData(sondageId)[1];
+    var nbHeures   = getData(sondageId)[0];
+    var calendrier = creerMatrice(nbHeures + 1, nbDates + 1);
+    // attributs de la barre de couleur
+    var barAtrs;
+    // disponibilites d'un participant a une certaine date
+    var disposParTab;
+    var noms = listeNoms(sondageId);
+
+    return tag("table","", calendrier.map(function(rows, i) {
+        // colonne du tableau
+        return tag("tr", "", rows.map(function(cols, j) {
+            // premiere colonne...
+            if (i == 0) {
+                // premier element...
+                if (j == 0) {
+                    // case sans contenu
+                    return tag("th", "", "");
+                // ... autres elements
+                } else {
+                    // dates proposees pour l'evenement
+                    return tag("th", "",
+                    // jour
+                    jour(dateDebut, j - 1)[2] + " "
+                    // mois (index commence par 0)
+                    + mois[jour(dateDebut, j - 1)[1] - 1]);
+                }
+            // ... autres colonnes
+            } else {
+                // premier element...
+                if (j == 0) {
+                    // heures proposees pour l'evenement
+                    return tag("th", "", +heureDebut + i - 1 + "h");
+                // ... autres elements
+                } else {
+                    // dispos avec barres
                     return tag("td",
-                    // attribut est soit l'id de la case selectionnable
-                    // ou une class entre min, max et aucune valeur
-                    (version == "sondage" ? cols : atrs("class",
-                    valeurClass(sondageId, nbHeures, i, j))),
-                    // contenu entre les balises est vide...
-                    (version == "sondage" ? "" :
-                    // ou contient les barres de couleur
+                    // attribut est une class entre min, max et aucune valeur
+                    atrs("class", valeurClass(sondageId, nbHeures, i, j)),
+                    // contenu entre les balises contient les barres de couleur.
                     // tous les participants peuvent avoir une barre dans
-                    // chaque case
+                    // chaque case.
                     Array(nbPart(sondageId)).fill(0).map(function(x, p) {
                         // couleur assignee a participant p
                         barAtrs = "background-color:" + stockColor[0][p]
@@ -288,8 +326,7 @@ var tab = function (sondageId, version) {
                             // affiche barre sur ses dates choisies
                             return tag("span", style(barAtrs), ".");
                         }
-                    }).join(""))
-                    );
+                    }).join(""));
                 }
             }
         }).join(""));
@@ -306,7 +343,7 @@ var getCalendar = function (sondageId) {
     // implementation du titre
     contenu = contenu.split('{{titre}}').join(title);
     // implementation du calendrier du sondage
-    contenu = contenu.split('{{table}}').join(tab(sondageId, "sondage"));
+    contenu = contenu.split('{{table}}').join(tabSondage(sondageId));
     // implementation de l'url
     contenu =
     contenu.split('{{url}}').join('http://localhost:1337/' + sondageId);
@@ -436,7 +473,7 @@ var getResults = function (sondageId) {
     // implementation du titre
     contenu = contenu.split('{{titre}}').join(title);
     // implementation de la table de resultats
-    contenu = contenu.split('{{table}}').join(tab(sondageId, "resultat"));
+    contenu = contenu.split('{{table}}').join(tabResultat(sondageId));
     // implementation de l'url
     contenu = contenu.split('{{url}}').join('http://localhost:1337/'+sondageId);
     // clear le stock des couleurs pour prochaine utilisation
@@ -468,7 +505,7 @@ var joursDiff = function (debut, fin) {
     var tempsDiff = dateFin.getTime() - dateDebut.getTime();
     // division pour remettre millisecondes en journees
     var joursDiff = tempsDiff / (3600 * 24 * 1000);
-    
+
     return joursDiff;
 };
 
@@ -557,13 +594,8 @@ var ajouterParticipant = function (sondageId, nom, disponibilites) {
     }
 };
 
-// Génère la `i`ème couleur parmi un nombre total `total` au format
-// hexadécimal HTML
-//
-// Notez que pour un grand nombre de couleurs (ex.: 250), générer
-// toutes les couleurs et les afficher devrait donner un joli dégradé qui
-// commence en rouge, qui passe par toutes les autres couleurs et qui
-// revient à rouge.
+// fonction convertit les nombres en lettres si applicable. par exemple,
+// convertit le nb hexadecimal "1515" en bon caractere "FF".
 var hexConvert = function (number) {
     var resultat = number;
     var target;
@@ -583,7 +615,9 @@ var hexConvert = function (number) {
 	return resultat;
 };
 
-var format = function (entier, base) { // nombre a hexadecimal
+// fonction prend en parametre un nombre en base 10 et le retourne en base
+// voulue.
+var format = function (entier, base) {
     var n = Math.floor(entier);
     var resultat = "";
 
@@ -591,11 +625,16 @@ var format = function (entier, base) { // nombre a hexadecimal
         resultat = n % base + resultat;
         n = Math.floor(n / base);
     } while (n > 0);
-    // convertit le nb hexadecimal (ex: "1515") en bon caractere (ex: "FF").
-    resultat = hexConvert(resultat);
     return resultat;
 };
 
+// Génère la `i`ème couleur parmi un nombre total `total` au format
+// hexadécimal HTML
+//
+// Notez que pour un grand nombre de couleurs (ex.: 250), générer
+// toutes les couleurs et les afficher devrait donner un joli dégradé qui
+// commence en rouge, qui passe par toutes les autres couleurs et qui
+// revient à rouge.
 var genColor = function(i, nbTotal) {
 
     var resultat = [];
@@ -603,6 +642,8 @@ var genColor = function(i, nbTotal) {
     var h = teinte / 60;
     var c = 0.7;
     var x = c * (1 - Math.abs(h % 2 - 1));
+    var hexNum;
+    var hex;
 
     switch (Math.floor(h)) {
 
@@ -616,7 +657,13 @@ var genColor = function(i, nbTotal) {
         default: resultat.push(0, 0, 0);
     }
     // retourne resultat en format ["RR", "GG", "BB"].
-    resultat = resultat.map(function(x) { return format(x*255, 16); });
+    resultat = resultat.map(function(x) {
+        // nombre hexadecimal en chiffre
+        hexNum  = format(x*255, 16);
+        // nombre hexadecimal en chiffre et lettre
+        hex = hexConvert(hexNum);
+        return hex;
+    });
 
     // retourne resultat en format "#RRGGBB".
     resultat = resultat.reduce(function(x, y) { return x + y; }, "#");
