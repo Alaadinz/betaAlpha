@@ -406,40 +406,50 @@ var divide = function (texte, diviseur) {
     return resultat;
 };
 
+// cree la legende de la page des resultats
 var legende = function (sondageId) {
+    // couleur pour chaques participants du sondageId
     var parts = Array(nbPart(sondageId)).fill(0);
-    var couleur = parts.map(function(x, i) { 
-        return "" + genColor(i, nbPart(sondageId))
+    var couleur = parts.map(function(x, i) {
+        return "" + genColor(i, nbPart(sondageId));
     });
-    var atrsLegend;
+    // attributs de la legende
+    var atrsLegende;
     var noms = listeNoms(sondageId);
+    // stock le tableau contenant les couleurs
     stockColor.push(couleur);
-    
+    // cree une liste ou chaque couleur est associee aux participants
     return tag("ul", "", Array(parts.length).fill(0).map( function(x, p) {
-        atrsLegend = "background-color: " + stockColor[0][p];
-        return tag("li", style(atrsLegend), noms[p]);
+        atrsLegende = "background-color: " + stockColor[0][p];
+        return tag("li", style(atrsLegende), noms[p]);
     }).join(""));
 };
 
+// retourne le texte HTML a afficher pour la page des resultats de sondageId
 var getResults = function (sondageId) {
+    // titre du sondage
     var title = find(sondageId, stockSondages, "enr").titre;
+    // contenu de la page HTML template
     var contenu = readFile('template/results.html');
-    
+    // implementation de la legende
     contenu = contenu.split('{{legende}}').join(legende(sondageId));
+    // implementation du titre
     contenu = contenu.split('{{titre}}').join(title);
+    // implementation de la table de resultats
     contenu = contenu.split('{{table}}').join(tab(sondageId, "resultat"));
+    // implementation de l'url
     contenu = contenu.split('{{url}}').join('http://localhost:1337/'+sondageId);
-    stockColor.pop();
-    
+    // clear le stock des couleurs pour prochaine utilisation
+    stockColor = [];
+    // retourne le texte HTML a l'utilisateur
     return contenu;
 };
 
-// Crée un sondage à partir des informations entrées
-//
-// Doit retourner false si les informations ne sont pas valides, ou
-// true si le sondage a été créé correctement.
-
-var comparer = function (debut, fin) {
+// fonction prend en parametre deux dates de format "YYYY-MM-DD" et s'assure
+// que la premiere est plus petite ou egale a la deuxieme. retourne true si
+// bien ecrite.
+var comparerDate = function (debut, fin) {
+    // temps en millisecondes depuis le 1e janvier 1970
     var dateDebut  = new Date(debut).getTime();
     var dateFin    = new Date(fin).getTime();
 
@@ -450,15 +460,20 @@ var comparer = function (debut, fin) {
 	}
 };
 
+// fonction prend en parametre deux dates de format "YYYY-MM-DD" et calcule
+// la difference de jour qui les separent
 var joursDiff = function (debut, fin) {
     var dateDebut = new Date(debut.split("-"));
     var dateFin   = new Date(fin.split("-"));
-    var tempsDiff = dateFin.getTime() - dateDebut.getTime(); // retour en millisecondes
-    var joursDiff = tempsDiff / (3600 * 24 * 1000);  // division pour remettre en jours
+    var tempsDiff = dateFin.getTime() - dateDebut.getTime();
+    // division pour remettre millisecondes en journees
+    var joursDiff = tempsDiff / (3600 * 24 * 1000);
     
     return joursDiff;
 };
 
+// fonction prend en parametre deux heures de format "#h" ou "##h" et calcule
+// la difference d'heure qui les separent
 var heureDiff = function (debut, fin) {
     var hourDebut = +debut.split('h')[0];
     var hourFin = +fin.split('h')[0];
@@ -466,12 +481,17 @@ var heureDiff = function (debut, fin) {
     return hourDiff;
 };
 
+// fonction verifie si le texte en parametre contient des caracteres autorises
 var carPermis = function (texte) {
 	for (var i = 0; i < texte.length; i++) {
-    	if ((texte[i] >= "a" && texte[i] <= "z")
-            || (texte[i] >= "A" && texte[i] <= "z")
-            || (parseInt(texte[i]) >= 0 && parseInt(texte[i]) <= 9)
-            || texte[i] == "-") {
+        // lettre minuscule
+        if ((texte[i] >= "a" && texte[i] <= "z")
+        // lettre majuscule
+        || (texte[i] >= "A" && texte[i] <= "z")
+        // chiffre
+        || (parseInt(texte[i]) >= 0 && parseInt(texte[i]) <= 9)
+        // tiret
+        || texte[i] == "-") {
             continue;
         } else {
             return false;
@@ -480,21 +500,25 @@ var carPermis = function (texte) {
     return true;
 };
 
-var creerSondage = function (titre, id, dateDebut, dateFin, heureDebut, heureFin) {
-
-    if ( (!(carPermis(id)))
-        || (!(comparer(dateDebut, dateFin)))
-        || (!(heureDiff(heureDebut, heureFin) >= 0))
-        || (!(joursDiff(dateDebut, dateFin) <= 30))) { // Les caracteres permis
+// fonction cree les calendrier de sondages pour les participants
+var creerSondage =
+function (titre, id, dateDebut, dateFin, heureDebut, heureFin) {
+    // verifie si les informations rentrees sont valides.
+    // caracteres autorises
+    if ((!(carPermis(id)))
+    // dates et heures logiques
+    || (!(comparerDate(dateDebut, dateFin)))
+    || (!(heureDiff(heureDebut, heureFin) >= 0))
+    || (!(joursDiff(dateDebut, dateFin) <= 30))) {
         return false;
     } else {
+        // id est deja existant dans le stock de sondages
         if (find(id, stockSondages, "position") >= 0) {
-            // id deja existant
             return false;
         } else {
-	        stockSondages.push({titre: titre, id: id, dateDebut: dateDebut,
-                            dateFin: dateFin, heureDebut: heureDebut,
-                            heureFin: heureFin});
+            // stock informations en enregistrement
+	        stockSondages.push({ titre: titre, id: id, dateDebut: dateDebut,
+            dateFin: dateFin, heureDebut: heureDebut, heureFin: heureFin });
         }
    	return true;
     }
@@ -503,12 +527,8 @@ var creerSondage = function (titre, id, dateDebut, dateFin, heureDebut, heureFin
 // Ajoute un participant et ses disponibilités aux résultats d'un
 // sondage. Les disponibilités sont envoyées au format textuel
 // fourni par la fonction compacterDisponibilites() de public/calendar.js
-//
-// Cette fonction ne retourne rien
-
-var ajouterParticipant = function(sondageId, nom, disponibilites) {
-    stockRep.push({id: sondageId, nom: nom,
-                   disponibilites: disponibilites});
+var ajouterParticipant = function (sondageId, nom, disponibilites) {
+    stockRep.push({ id: sondageId, nom: nom, disponibilites: disponibilites });
 };
 
 // Génère la `i`ème couleur parmi un nombre total `total` au format
@@ -518,7 +538,6 @@ var ajouterParticipant = function(sondageId, nom, disponibilites) {
 // toutes les couleurs et les afficher devrait donner un joli dégradé qui
 // commence en rouge, qui passe par toutes les autres couleurs et qui
 // revient à rouge.
-
 var hexConvert = function (number) {
     var resultat = number;
     var target;
