@@ -104,9 +104,6 @@ var getIndex = function (replacements) {
     };
 };
 
-
-// --- À compléter ---
-
 var mois = [
     'Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin',
     'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Dec'
@@ -114,147 +111,253 @@ var mois = [
 
 var MILLIS_PAR_JOUR = (24 * 60 * 60 * 1000);
 
-// Retourne le texte HTML à afficher à l'utilisateur pour répondre au
-// sondage demandé.
-//
-// Doit retourner false si le calendrier demandé n'existe pas
+// stock des couleurs
+var stockColor = [];
+// stock des sondages crees
+var stockSondages = [];
+// stock des reponses aux sondages
+var stockRep = [];
 
-//Tableaux crée de n elements. Ses éléments sont ensuite remplis de 0 pour
-//ne pas être undefined. Ce tableau utilise les fonction map et des itterations
-//de i pour les "tr" et j pour les "td" pour y inserer des valeurs.
-
+// fonction cree des attributs
 var atrs = function (name, content) {
-   return name + "=\"" + content + "\"";
+    return name + "=\"" + content + "\"";
 };
 
-//Fonction pour crée les tags
+// fonction cree des tags
 var tag = function (name, attribut, content) {
-   return "<" + name + (attribut.length == 0 ? "" : " ") + attribut + ">"
-   		  + content + "</"+name+">";
+    return "<" + name + (attribut.length == 0 ? "" : " ") + attribut + ">"
+    + content + "</"+name+">";
 };
 
+// fonction cree des styles pour modifier les balises
 var style = function (atrs) {
-    return "style=\"" + atrs + "\""; 
+    return "style=\"" + atrs + "\"";
 };
 
+// fonction cree un tableau de tableaux, associe un id aux cases
 var creerMatrice = function (rows, cols) {
     return Array(rows).fill(0).map(function (y, i) {
-        return Array(cols).fill(0).map(function(x, j){
-            return atrs("id", (i-1) +"-"+ (j-1));
+        return Array(cols).fill(0).map(function(x, j) {
+            return atrs("id", (i - 1) + "-" + (j - 1));
         });
     });
 };
 
-var jourAdd = function (texte, i) {
+// fonction prend en parametre une date en format "YYYY-MM-DD" et l'index
+// parmis une liste de toute les dates que le participant peut choisir
+var jour = function (texte, i) {
+    // temps en millisecondes depuis le 1e janvier 1970
     var date = new Date(texte.split("-")).getTime();
-    date += i * (3600 * 24 * 1000); // add days
-	
+    // ajoute un nombre i de jour a la date du debut
+    date += i * MILLIS_PAR_JOUR;
+    // annee, mois et jour de la nouvelle date en nombre
     var dateYear   = new Date(date).getFullYear();
-    var dateMonth  = new Date(date).getMonth() + 1; // starts at 0
+    var dateMonth  = new Date(date).getMonth() + 1; // commence a 0
     var dateDay    = new Date(date).getDate();
-	
-    var currentDay = [dateYear, dateMonth, dateDay];
-    return currentDay;
+    var newDate = [dateYear, dateMonth, dateDay];
+    // nouvelle date retournee dans un tableau
+    return newDate;
 };
 
-var findPosStock = function (target, stock, pos) {
+// Fonction retourne prend en parametre l'id recherche, le stock de donnees et
+// le comportement attendu de la fonction. Si on recherche la position de l'id
+// dans le stock, il retournera son index. Si non, il retournera son contenu.
+var find = function (targetId, stock, behavior) {
     for (var i = 0; i < stock.length; i++) {
-        if (stock[i].id == target) {
-            if (pos == "position") {
+        if (stock[i].id == targetId) {
+            if (behavior == "position") {
                 return i;
-            } else { // recherche enregistrement
+            } else {
                 return stock[i];
             }
         }
     }
+    // id n'existe pas dans le stock recherche
     return -1;
 };
 
-var minOuMax = function (sondageId, nbHeures, i, j) {
-    var matriceDispos = divide(tabDesParts(sondageId).join(""),
-    nbPart(sondageId)).map(function(x) { return divide(x.join(""), nbHeures);
-    }).reduce(sumDispos);
-    if (+matriceDispos[i-1][j-1] == minMax(matriceDispos)[0]) {
-        return "min";
-    }
-    if (+matriceDispos[i-1][j-1] == minMax(matriceDispos)[1]) {
-        return "max";
-    } else {
-        return "";
+// Fonction retourne la valeur de la classe de la table des resultats. Elle
+// prend en parametre l'id du sondage, le nbHeures du calendrier et l'index
+// d'une case de la matrice du calendrier.
+var valeurClass = function (sondageId, nbHeures, i, j) {
+    // tableau avec toutes les disponibilites des participants du sondage id
+    var allPartsDipos = tabDesParts(sondageId);
+    // chaque "0" et "1" est attribue a une case de la matrice du calendrier
+    var allPartsDisposTab = allPartsDipos.map(function(texte) {
+                                return divide(texte, nbHeures);
+                            });
+    // nouvelle matrice avec le total des dispos de toutes les participants
+    // dans chaque case de la matrice du calendrier, respectivement
+    var sumDisposTab = allPartsDisposTab.reduce(sumDispos);
+    // la plus petite et la plus grande valeure de la matrice des sommes des
+    // dispos
+    var min = minMax(sumDisposTab)[0], max = minMax(sumDisposTab)[1];
+    // comparaison de min et max avec la valeur presente de la matrice
+    switch (sumDisposTab[i - 1][j - 1]) {
+        case min: return "min"; break;
+        case max: return "max"; break;
+        default: return "";
     }
 };
 
-var tab = function (sondageId, version) {
-	
-    var sondage = findPosStock(sondageId, stockSondages, "enr");
-	
-	var dateDebut = sondage.dateDebut;
-	var dateFin = sondage.dateFin;
-	var heureDebut = sondage.heureDebut.split("h")[0];
-	var heureFin = sondage.heureFin.split("h")[0];
-	
-	var nbDates = joursDiff(dateDebut, dateFin) + 1;
-	var nbHeures = +heureFin - +heureDebut + 1;
-	
-	var tableAtrs 	= atrs("id", "calendrier")
-					  +atrs("onmousedown", "onClick(event)")
-					  +atrs("onmouseover", "onMove(event)")
-					  +atrs("data-nbjours", ""+nbDates)
-					  +atrs("data-nbheures", ""+nbHeures);
-	
-    var matrice = creerMatrice(nbHeures + 1, nbDates + 1);
-    
-    var barAtrs;
-    var noms = listeNoms(sondageId);
+var getData = function (sondageId) {
+    // on recherche l'enregistrement du stock de sondages qui contient l'id
+    // sondageId
+    var sondageData = find(sondageId, stockSondages, "data");
+    // enumeration des donnees de l'enregistrements
+	var dateDebut  = sondageData.dateDebut;
+	var dateFin    = sondageData.dateFin;
+	var heureDebut = sondageData.heureDebut.split("h")[0];
+    var heureFin   = sondageData.heureFin.split("h")[0];
+    // nbDates et nbHeures du sondage cree
+	var nbDates  = joursDiff(dateDebut, dateFin) + 1;
+    var nbHeures = heureDiff(heureDebut, heureFin) + 1;
+    // retourne donnees utiles
+    return [nbHeures, nbDates, heureDebut, dateDebut];
+};
 
-    return tag("table", (version == "sondage" ? tableAtrs : ""),
-    matrice.map(function(rows, i) {
+// cree tableau pour repondre au sondage
+var tabSondage = function (sondageId) {
+    // creation du calendrier en matrice
+	var dateDebut  = getData(sondageId)[3];
+	var heureDebut = getData(sondageId)[2];
+	var nbDates    = getData(sondageId)[1];
+    var nbHeures   = getData(sondageId)[0];
+    var calendrier = creerMatrice(nbHeures + 1, nbDates + 1);
+	// attributs desires de la table
+	var tableAtrs 	= atrs("id", "calendrier")
+					  + atrs("onmousedown", "onClick(event)")
+					  + atrs("onmouseover", "onMove(event)")
+					  + atrs("data-nbjours", "" + nbDates)
+					  + atrs("data-nbheures", "" + nbHeures);
+
+    return tag("table", tableAtrs, calendrier.map(function(rows, i) {
+        // colonne du tableau
         return tag("tr", "", rows.map(function(cols, j) {
+            // premiere colonne...
             if (i == 0) {
+                // premier element...
                 if (j == 0) {
+                    // case sans contenu
                     return tag("th", "", "");
+                // ... autres elements
                 } else {
-                    return tag("th", "", jourAdd(dateDebut, j - 1)[2]+ " "
-                           +mois[jourAdd(dateDebut, j - 1)[1] - 1]);
+                    // dates proposees pour l'evenement
+                    return tag("th", "",
+                    // jour
+                    jour(dateDebut, j - 1)[2] + " "
+                    // mois (index commence par 0)
+                    + mois[jour(dateDebut, j - 1)[1] - 1]);
                 }
+            // ... autres colonnes
             } else {
+                // premier element...
                 if (j == 0) {
+                    // heures proposees pour l'evenement
                     return tag("th", "", +heureDebut + i - 1 + "h");
+                // ... autres elements
                 } else {
-                    return tag("td", (version == "sondage" ? cols : atrs("class",
-                    minOuMax(sondageId, nbHeures, i, j)) ), // fin de 2e elem td
-                        (version == "sondage" ? "" :
-                        Array(nbPart(sondageId)).fill(0).map(function(x, p) {
-                            barAtrs = "background-color:"+stockColor[0][p]
-                                    +"; color:"+stockColor[0][p];
-                            if (divide(disposPart(noms[p], sondageId), nbHeures)[i-1][j-1]
-                            == "1") {
-                                return tag("span", style(barAtrs), ".");
-                            }
-                        }).join(""))
-                    );
+                    // cases selectionnables du calendrier
+                    return tag("td", cols, "");
                 }
             }
         }).join(""));
     }).join(""));
 };
 
+// cree tableau pour visionner les resultats du sondage
+var tabResultat = function (sondageId) {
+    // creation du calendrier en matrice
+	var dateDebut  = getData(sondageId)[3];
+	var heureDebut = getData(sondageId)[2];
+	var nbDates    = getData(sondageId)[1];
+    var nbHeures   = getData(sondageId)[0];
+    var calendrier = creerMatrice(nbHeures + 1, nbDates + 1);
+    // attributs de la barre de couleur
+    var barAtrs;
+    // disponibilites d'un participant a une certaine date
+    var disposParTab;
+    var noms = listeNoms(sondageId);
+
+    return tag("table","", calendrier.map(function(rows, i) {
+        // colonne du tableau
+        return tag("tr", "", rows.map(function(cols, j) {
+            // premiere colonne...
+            if (i == 0) {
+                // premier element...
+                if (j == 0) {
+                    // case sans contenu
+                    return tag("th", "", "");
+                // ... autres elements
+                } else {
+                    // dates proposees pour l'evenement
+                    return tag("th", "",
+                    // jour
+                    jour(dateDebut, j - 1)[2] + " "
+                    // mois (index commence par 0)
+                    + mois[jour(dateDebut, j - 1)[1] - 1]);
+                }
+            // ... autres colonnes
+            } else {
+                // premier element...
+                if (j == 0) {
+                    // heures proposees pour l'evenement
+                    return tag("th", "", +heureDebut + i - 1 + "h");
+                // ... autres elements
+                } else {
+                    // dispos avec barres
+                    return tag("td",
+                    // attribut est une class entre min, max et aucune valeur
+                    atrs("class", valeurClass(sondageId, nbHeures, i, j)),
+                    // contenu entre les balises contient les barres de couleur.
+                    // tous les participants peuvent avoir une barre dans
+                    // chaque case.
+                    Array(nbPart(sondageId)).fill(0).map(function(x, p) {
+                        // couleur assignee a participant p
+                        barAtrs = "background-color:" + stockColor[0][p]
+                        + "; color:" + stockColor[0][p];
+                        // dispos de p avec la meme forme que le calendrier
+                        disposParTab = divide(disposPart(noms[p], sondageId),
+                        nbHeures)
+                        if (disposParTab[i - 1][j - 1] == "1") {
+                            // affiche barre sur ses dates choisies
+                            return tag("span", style(barAtrs), ".");
+                        }
+                    }).join(""));
+                }
+            }
+        }).join(""));
+    }).join(""));
+};
+
+// retourne le texte HTML a affhicher a l'utilisateur pour repondre au
+// sondage cree
 var getCalendar = function (sondageId) {
-    var title = findPosStock(sondageId, stockSondages, "enr").titre;
-	var contenu = readFile('template/calendar.html');     // La page HTML
-    contenu = contenu.split('{{titre}}').join(title); // Titre
-    contenu = contenu.split('{{table}}').join(tab(sondageId, "sondage"));
-    contenu = contenu.split('{{url}}').join('http://localhost:1337/'+sondageId);
+    var contenu;
+    if (find(sondageId, stockSondages, "position") >= 0) {
+        // titre du sondage
+        var title = find(sondageId, stockSondages, "enr").titre;
+        // contenu de la page HTML template
+        contenu = readFile('template/calendar.html');
+        // implementation du titre
+        contenu = contenu.split('{{titre}}').join(title);
+        // implementation du calendrier du sondage
+        contenu = contenu.split('{{table}}').join(tabSondage(sondageId));
+        // implementation de l'url
+        contenu =
+        contenu.split('{{url}}').join('http://localhost:1337/' + sondageId);
+    } else {
+        contenu = readFile('template/error404.html');
+    }
+    // retour du contenu modifie
     return contenu;
 };
 
-// Retourne le texte HTML à afficher à l'utilisateur pour voir les
-// résultats du sondage demandé
-//
-// Doit retourner false si le calendrier demandé n'existe pas
-
+// retourne le nombre de participants qui ont repondu au sondageId
 var nbPart = function (sondageId) {
+    // appel au stock de reponses des participants (enregistrements)
     var liste = stockRep;
+    // aucun participants au depart
     var resultat = 0;
     for (var i = 0; i < liste.length; i++) {
         if (liste[i].id == sondageId) {
@@ -264,6 +367,7 @@ var nbPart = function (sondageId) {
     return resultat;
 };
 
+// retourne la liste des noms de toutes les participants du sondageId
 var listeNoms = function (sondageId) {
     var liste = stockRep;
     var resultat = [];
@@ -275,6 +379,7 @@ var listeNoms = function (sondageId) {
     return resultat;
 };
 
+// retourne les disponibilites d'un participant pour le sondageId
 var disposPart = function (nom, sondageId) {
     var liste = stockRep;
     var resultat = "";
@@ -287,7 +392,8 @@ var disposPart = function (nom, sondageId) {
     return resultat;
 };
 
-// format ["dispo", "dispo"]
+// retourne un tableau avec toutes les disponibilites des participants pour
+// sondageId
 var tabDesParts = function (sondageId) {
     var liste = stockRep;
     var resultat = [];
@@ -299,6 +405,8 @@ var tabDesParts = function (sondageId) {
     return resultat;
 };
 
+// retourne une matrice ou chaques elements est la somme des elements entre
+// 2 matrices, respectivement
 var sumDispos = function (matrice1, matrice2) {
     for (var i = 0; i < matrice1.length; i++) {
         for (var j = 0; j < matrice1[i].length; j++) {
@@ -308,6 +416,7 @@ var sumDispos = function (matrice1, matrice2) {
     return matrice1;
 };
 
+// retourne la valeur minimale et maximale des elements d'une matrice
 var minMax = function(matrice) {
     var min = Infinity;
     var max = 0;
@@ -324,51 +433,62 @@ var minMax = function(matrice) {
     return [min, max];
 };
 
-var divide = function (dispo, diviseur) {
-    var init = dispo.split("");
+// prend en parametre un string et retourne une matrice avec diviseur elements
+// ou chaques elements contient une partie du string divisee equitablement
+var divide = function (texte, diviseur) {
+    var array = texte.split("");
     var resultat = [];
-    var long = init.length / diviseur;
+    var longueur = array.length / diviseur;
 	for (var i = 0; i < diviseur; i++) {
-    	resultat.push(init.splice(0, long));
+    	resultat.push(array.splice(0, longueur));
 	}
     return resultat;
 };
 
-var stockColor = []; // stockages des couleurs
-
+// cree la legende de la page des resultats
 var legende = function (sondageId) {
+    // couleur pour chaques participants du sondageId
     var parts = Array(nbPart(sondageId)).fill(0);
-    var couleur = parts.map(function(x, i) { return ''
-    + genColor(i, nbPart(sondageId)) });
-    var atrsLegend;
+    var couleur = parts.map(function(x, i) {
+        return "" + genColor(i, nbPart(sondageId));
+    });
+    // attributs de la legende
+    var atrsLegende;
     var noms = listeNoms(sondageId);
+    // stock le tableau contenant les couleurs
     stockColor.push(couleur);
-    
+    // cree une liste ou chaque couleur est associee aux participants
     return tag("ul", "", Array(parts.length).fill(0).map( function(x, p) {
-        atrsLegend = "background-color: " + stockColor[0][p];
-        return tag("li", style(atrsLegend), noms[p]);
+        atrsLegende = "background-color: " + stockColor[0][p];
+        return tag("li", style(atrsLegende), noms[p]);
     }).join(""));
 };
 
+// retourne le texte HTML a afficher pour la page des resultats de sondageId
 var getResults = function (sondageId) {
-    var title = findPosStock(sondageId, stockSondages, "enr").titre;
+    // titre du sondage
+    var title = find(sondageId, stockSondages, "enr").titre;
+    // contenu de la page HTML template
     var contenu = readFile('template/results.html');
-    
+    // implementation de la legende
     contenu = contenu.split('{{legende}}').join(legende(sondageId));
+    // implementation du titre
     contenu = contenu.split('{{titre}}').join(title);
-    contenu = contenu.split('{{table}}').join(tab(sondageId, "resultat"));
+    // implementation de la table de resultats
+    contenu = contenu.split('{{table}}').join(tabResultat(sondageId));
+    // implementation de l'url
     contenu = contenu.split('{{url}}').join('http://localhost:1337/'+sondageId);
-    stockColor.pop();
-    
+    // clear le stock des couleurs pour prochaine utilisation
+    stockColor = [];
+    // retourne le texte HTML a l'utilisateur
     return contenu;
 };
 
-// Crée un sondage à partir des informations entrées
-//
-// Doit retourner false si les informations ne sont pas valides, ou
-// true si le sondage a été créé correctement.
-
-var comparer = function (debut, fin) {
+// fonction prend en parametre deux dates de format "YYYY-MM-DD" et s'assure
+// que la premiere est plus petite ou egale a la deuxieme. retourne true si
+// bien ecrite.
+var comparerDate = function (debut, fin) {
+    // temps en millisecondes depuis le 1e janvier 1970
     var dateDebut  = new Date(debut).getTime();
     var dateFin    = new Date(fin).getTime();
 
@@ -379,21 +499,38 @@ var comparer = function (debut, fin) {
 	}
 };
 
+// fonction prend en parametre deux dates de format "YYYY-MM-DD" et calcule
+// la difference de jour qui les separent
 var joursDiff = function (debut, fin) {
     var dateDebut = new Date(debut.split("-"));
     var dateFin   = new Date(fin.split("-"));
-    var tempsDiff = dateFin.getTime() - dateDebut.getTime(); // retour en millisecondes
-    var joursDiff = tempsDiff / (3600 * 24 * 1000);  // division pour remettre en jours
-    
+    var tempsDiff = dateFin.getTime() - dateDebut.getTime();
+    // division pour remettre millisecondes en journees
+    var joursDiff = tempsDiff / (3600 * 24 * 1000);
+
     return joursDiff;
 };
 
+// fonction prend en parametre deux heures de format "#h" ou "##h" et calcule
+// la difference d'heure qui les separent
+var heureDiff = function (debut, fin) {
+    var hourDebut = +debut.split('h')[0];
+    var hourFin = +fin.split('h')[0];
+    var hourDiff = hourFin - hourDebut;
+    return hourDiff;
+};
+
+// fonction verifie si le texte en parametre contient des caracteres autorises
 var carPermis = function (texte) {
 	for (var i = 0; i < texte.length; i++) {
-    	if ((texte[i] >= "a" && texte[i] <= "z")
-            || (texte[i] >= "A" && texte[i] <= "z")
-            || (parseInt(texte[i]) >= 0)
-            || texte[i] == "-") {
+        // lettre minuscule
+        if ((texte[i] >= "a" && texte[i] <= "z")
+        // lettre majuscule
+        || (texte[i] >= "A" && texte[i] <= "z")
+        // chiffre
+        || (parseInt(texte[i]) >= 0 && parseInt(texte[i]) <= 9)
+        // tiret
+        || texte[i] == "-") {
             continue;
         } else {
             return false;
@@ -402,58 +539,65 @@ var carPermis = function (texte) {
     return true;
 };
 
-var stockSondages = [];
-
-var creerSondage = function(titre, id, dateDebut, dateFin, heureDebut, heureFin) {
-
-    var heureDebutConverti = +heureDebut.slice(0, heureDebut.length-1);
-    var heureFinConverti = +heureFin.slice(0, heureFin.length-1);
-    
-    if ((!carPermis(id))
-        || (!comparer(dateDebut, dateFin))
-        || (!(heureDebutConverti <= heureFinConverti))
-        || (!(joursDiff(dateDebut, dateFin) <= 30))) { // Les caracteres permis
+// fonction cree les calendrier de sondages pour les participants
+var creerSondage =
+function (titre, id, dateDebut, dateFin, heureDebut, heureFin) {
+    // verifie si les informations rentrees sont valides.
+    // caracteres autorises
+    if ((!(carPermis(id)))
+    // dates et heures logiques
+    || (!(comparerDate(dateDebut, dateFin)))
+    || (!(heureDiff(heureDebut, heureFin) >= 0))
+    || (!(joursDiff(dateDebut, dateFin) <= 30))) {
         return false;
     } else {
-        if (findPosStock(id, stockSondages, "position") >= 0) {
-            // enleve sondage mm id
-            stockSondages.splice(findPosStock(id, stockSondages, "position"), 1);
-            stockSondages.push({titre: titre, id: id, dateDebut: dateDebut,
-                dateFin: dateFin, heureDebut: heureDebut,
-                heureFin: heureFin});
-            do {
-                stockRep.splice(findPosStock(id, stockRep, "position"), 1);
-            } while (findPosStock(id, stockRep, "position") >= 0);
+        // id est deja existant dans le stock de sondages
+        if (find(id, stockSondages, "position") >= 0) {
+            return false;
         } else {
-	        stockSondages.push({titre: titre, id: id, dateDebut: dateDebut,
-                            dateFin: dateFin, heureDebut: heureDebut,
-                            heureFin: heureFin});
+            // stock informations en enregistrement
+	        stockSondages.push({ titre: titre, id: id, dateDebut: dateDebut,
+            dateFin: dateFin, heureDebut: heureDebut, heureFin: heureFin });
         }
    	return true;
     }
 };
 
+// fonction verifie l'existence d'un nom dans le stock des reponses au sondageId
+var existenceNom = function (sondageId, nom) {
+    var liste = stockRep;
+    for (var i = 0; i < liste.length; i++) {
+        if (liste[i].id == sondageId
+            && liste[i].nom == nom) {
+            return true
+        }
+    }
+    return false;
+};
+
 // Ajoute un participant et ses disponibilités aux résultats d'un
 // sondage. Les disponibilités sont envoyées au format textuel
 // fourni par la fonction compacterDisponibilites() de public/calendar.js
-//
-// Cette fonction ne retourne rien
-
-var stockRep = [];
-
-var ajouterParticipant = function(sondageId, nom, disponibilites) {
-    stockRep.push({id: sondageId, nom: nom,
-                   disponibilites: disponibilites});
+var ajouterParticipant = function (sondageId, nom, disponibilites) {
+    // si nom existe deja, un numero sera ajoute apres le nom
+    // ex : John devient John2
+    if (existenceNom(sondageId, nom)) {
+        var newName;
+        var i = 2;
+        do {
+            newName = nom + i;
+            i++;
+        } while(existenceNom(sondageId, newName));
+        stockRep.push({ id: sondageId, nom: newName,
+        disponibilites: disponibilites });
+    } else {
+        stockRep.push({ id: sondageId, nom: nom,
+        disponibilites: disponibilites });
+    }
 };
 
-// Génère la `i`ème couleur parmi un nombre total `total` au format
-// hexadécimal HTML
-//
-// Notez que pour un grand nombre de couleurs (ex.: 250), générer
-// toutes les couleurs et les afficher devrait donner un joli dégradé qui
-// commence en rouge, qui passe par toutes les autres couleurs et qui
-// revient à rouge.
-
+// fonction convertit les nombres en lettres si applicable. par exemple,
+// convertit le nb hexadecimal "1515" en bon caractere "FF".
 var hexConvert = function (number) {
     var resultat = number;
     var target;
@@ -473,7 +617,9 @@ var hexConvert = function (number) {
 	return resultat;
 };
 
-var format = function (entier, base) { // nombre a hexadecimal
+// fonction prend en parametre un nombre en base 10 et le retourne en base
+// voulue.
+var format = function (entier, base) {
     var n = Math.floor(entier);
     var resultat = "";
 
@@ -481,11 +627,16 @@ var format = function (entier, base) { // nombre a hexadecimal
         resultat = n % base + resultat;
         n = Math.floor(n / base);
     } while (n > 0);
-    // convertit le nb hexadecimal (ex: "1515") en bon caractere (ex: "FF").
-    resultat = hexConvert(resultat);
     return resultat;
 };
 
+// Génère la `i`ème couleur parmi un nombre total `total` au format
+// hexadécimal HTML
+//
+// Notez que pour un grand nombre de couleurs (ex.: 250), générer
+// toutes les couleurs et les afficher devrait donner un joli dégradé qui
+// commence en rouge, qui passe par toutes les autres couleurs et qui
+// revient à rouge.
 var genColor = function(i, nbTotal) {
 
     var resultat = [];
@@ -493,6 +644,8 @@ var genColor = function(i, nbTotal) {
     var h = teinte / 60;
     var c = 0.7;
     var x = c * (1 - Math.abs(h % 2 - 1));
+    var hexNum;
+    var hex;
 
     switch (Math.floor(h)) {
 
@@ -506,7 +659,13 @@ var genColor = function(i, nbTotal) {
         default: resultat.push(0, 0, 0);
     }
     // retourne resultat en format ["RR", "GG", "BB"].
-    resultat = resultat.map(function(x) { return format(x*255, 16); });
+    resultat = resultat.map(function(x) {
+        // nombre hexadecimal en chiffre
+        hexNum  = format(x*255, 16);
+        // nombre hexadecimal en chiffre et lettre
+        hex = hexConvert(hexNum);
+        return hex;
+    });
 
     // retourne resultat en format "#RRGGBB".
     resultat = resultat.reduce(function(x, y) { return x + y; }, "#");
